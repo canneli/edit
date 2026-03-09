@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Video, RefreshCw, Eye, EyeOff, Upload, Image as ImageIcon } from 'lucide-react';
+import { Play, Pause, Video, RefreshCw, Eye, EyeOff, Upload, Image as ImageIcon, Download, Info } from 'lucide-react';
 
 const ORY_COLORS = {
   blue: '#0043FF',
@@ -65,17 +65,33 @@ export default function App() {
   const [showGuides, setShowGuides] = useState(false);
   const [bgMode, setBgMode] = useState('video');
   const [localVideoUrl, setLocalVideoUrl] = useState('');
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
   
   const videoRef = useRef(null);
   const fileInputRef = useRef(null);
 
   const togglePlay = () => {
     if (!isPlaying) {
-      if (bgMode === 'video' && videoRef.current) videoRef.current.play();
+      if (bgMode === 'video' && videoRef.current) {
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.warn("A reprodução do vídeo foi bloqueada:", error);
+          });
+        }
+      }
       setIsPlaying(true);
     } else {
       if (bgMode === 'video' && videoRef.current) videoRef.current.pause();
       setIsPlaying(false);
+    }
+  };
+
+  const handleVideoError = () => {
+    console.warn("Erro ao carregar a fonte de vídeo.");
+    if (bgMode === 'video' && !localVideoUrl) {
+      setBgMode('chroma');
+      alert("O navegador bloqueou a reprodução direta do vídeo do Google Drive por motivos de segurança (CORS). A visualização foi alterada para 'Chroma Key'. Por favor, use a opção 'CARREGAR FICHEIRO LOCAL'.");
     }
   };
 
@@ -100,7 +116,7 @@ export default function App() {
 
     const loop = (now) => {
       if (isPlaying) {
-        if (bgMode === 'video' && videoRef.current) {
+        if (bgMode === 'video' && videoRef.current && videoRef.current.readyState >= 2 && !videoRef.current.paused) {
           setCurrentTime(videoRef.current.currentTime);
           
           if (videoRef.current.ended || videoRef.current.currentTime >= 54.2) {
@@ -134,18 +150,29 @@ export default function App() {
   }, [currentTime]);
 
   const startRecordingMode = () => {
+    setIsDownloadModalOpen(false);
     setIsRecordingMode(true);
     setShowGuides(false);
     resetTime();
-    setBgMode('chroma'); 
-    setIsPlaying(true);
+    
+    // Forçamos o modo de vídeo para que grave TUDO (vídeo, cor, zooms, legendas)
+    setBgMode('video'); 
+    
+    // Pequeno atraso para garantir que a UI se esconde antes de iniciar
+    setTimeout(() => {
+        setIsPlaying(true);
+        if (videoRef.current) {
+            videoRef.current.play().catch(console.error);
+        }
+    }, 500);
   };
 
   const stopRecordingMode = () => {
     setIsRecordingMode(false);
     setIsPlaying(false);
-    setBgMode('video'); 
-    if (videoRef.current) videoRef.current.pause();
+    if (videoRef.current) {
+      videoRef.current.pause().catch(e => console.warn(e));
+    }
   };
 
   const getZoomLevel = (time) => {
@@ -186,12 +213,8 @@ export default function App() {
         }
 
         @keyframes pulseGlowBlue {
-          0% { 
-            text-shadow: 0 3px 6px rgba(0,0,0,0.95), 0 0 15px rgba(0,67,255,0.6), 0 0 25px rgba(0,67,255,0.4); 
-          }
-          100% { 
-            text-shadow: 0 3px 6px rgba(0,0,0,0.95), 0 0 20px rgba(0,67,255,1), 0 0 40px rgba(0,67,255,0.8), 0 0 60px rgba(0,67,255,0.5); 
-          }
+          0% { text-shadow: 0 3px 6px rgba(0,0,0,0.95), 0 0 15px rgba(0,67,255,0.6), 0 0 25px rgba(0,67,255,0.4); }
+          100% { text-shadow: 0 3px 6px rgba(0,0,0,0.95), 0 0 20px rgba(0,67,255,1), 0 0 40px rgba(0,67,255,0.8), 0 0 60px rgba(0,67,255,0.5); }
         }
         
         .text-shadow-logo {
@@ -274,6 +297,59 @@ export default function App() {
         }
       `}</style>
 
+      {/* MODAL DE INSTRUÇÕES DE DOWNLOAD (Atualizado para Gravação Direta) */}
+      {isDownloadModalOpen && (
+        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="bg-[#111] border border-white/10 rounded-3xl p-8 max-w-lg w-full shadow-2xl relative animate-in fade-in zoom-in duration-300">
+            <h2 className="text-2xl font-black mb-2 flex items-center gap-3 tracking-tight">
+              <Download className="text-[#0043FF]" size={28} /> Como Exportar o Vídeo Completo
+            </h2>
+            <p className="text-sm text-neutral-400 mb-8 leading-relaxed">
+              Para capturar a edição completa (incluindo tratamento de cor, vídeo de fundo e legendas 60fps), utilize o seu gravador de ecrã:
+            </p>
+            
+            <div className="space-y-6 mb-8">
+              <div className="flex gap-4 items-start">
+                <div className="w-8 h-8 rounded-full bg-[#0043FF]/20 text-[#0043FF] border border-[#0043FF]/30 flex items-center justify-center shrink-0 font-bold">1</div>
+                <div>
+                  <h3 className="font-bold text-white mb-1">Inicie a Gravação do Seu Ecrã</h3>
+                  <p className="text-xs text-neutral-400">Utilize o gravador nativo do seu computador e selecione apenas a área do vídeo. (Mac: <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-white">Cmd + Shift + 5</kbd> | Win: <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-white">Win + G</kbd> ou Ferramenta de Recorte).</p>
+                </div>
+              </div>
+              <div className="flex gap-4 items-start">
+                <div className="w-8 h-8 rounded-full bg-[#0043FF]/20 text-[#0043FF] border border-[#0043FF]/30 flex items-center justify-center shrink-0 font-bold">2</div>
+                <div>
+                  <h3 className="font-bold text-white mb-1">Dê Play na Animação</h3>
+                  <p className="text-xs text-neutral-400">Clique em "Gravar Vídeo Completo" abaixo. A barra lateral irá desaparecer e o vídeo vai tocar automaticamente do início ao fim com todos os efeitos.</p>
+                </div>
+              </div>
+              <div className="flex gap-4 items-start">
+                <div className="w-8 h-8 rounded-full bg-[#0043FF]/20 text-[#0043FF] border border-[#0043FF]/30 flex items-center justify-center shrink-0 font-bold">3</div>
+                <div>
+                  <h3 className="font-bold text-white mb-1">Recorte e Partilhe</h3>
+                  <p className="text-xs text-neutral-400">Basta parar a gravação de ecrã quando o vídeo terminar, cortar o início/fim e o seu vídeo final está 100% pronto para o Instagram/TikTok!</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setIsDownloadModalOpen(false)}
+                className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-colors text-sm"
+              >
+                VOLTAR
+              </button>
+              <button 
+                onClick={startRecordingMode}
+                className="flex-1 py-3 bg-[#0043FF] hover:bg-blue-600 text-white rounded-xl font-bold transition-colors shadow-lg shadow-blue-500/20 text-sm flex items-center justify-center gap-2"
+              >
+                <Video size={16} /> GRAVAR VÍDEO COMPLETO
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* PAINEL LATERAL */}
       {!isRecordingMode && (
         <div className="w-80 h-full border-r border-white/10 bg-[#111] p-6 flex flex-col gap-6 z-20 shrink-0 overflow-y-auto shadow-2xl">
@@ -329,7 +405,7 @@ export default function App() {
               />
               <button 
                 onClick={() => fileInputRef.current.click()}
-                className="w-full py-3 px-4 mt-2 rounded-xl border border-white/10 text-xs font-bold flex items-center justify-between text-neutral-400 hover:bg-white/5 transition-all"
+                className="w-full py-3 px-4 rounded-xl border border-white/10 text-xs font-bold flex items-center justify-between text-neutral-400 hover:bg-white/5 transition-all"
               >
                 CARREGAR FICHEIRO LOCAL
                 <Upload size={16} />
@@ -347,12 +423,12 @@ export default function App() {
 
           <div className="mt-auto space-y-4 pt-4">
             <button 
-              onClick={startRecordingMode}
+              onClick={() => setIsDownloadModalOpen(true)}
               className="w-full py-4 rounded-2xl font-black text-sm shadow-xl transition-all flex flex-col items-center justify-center gap-1 bg-white text-black hover:scale-[1.02]"
             >
               <div className="flex items-center gap-2">
-                <Video size={18} />
-                GRAVAR TELA VERDE
+                <Download size={18} />
+                COMO BAIXAR / EXPORTAR
               </div>
             </button>
           </div>
@@ -362,12 +438,13 @@ export default function App() {
       {/* ÁREA DE RENDERIZAÇÃO PRINCIPAL */}
       <div className="flex-1 h-full flex items-center justify-center relative p-8">
         
+        {/* Botão de Cancelar Gravação (Colocado fora da área 9:16 para não aparecer na gravação) */}
         {isRecordingMode && (
           <button 
             onClick={stopRecordingMode}
             className="absolute top-6 left-6 z-50 px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-full shadow-lg hover:bg-red-700 flex items-center gap-2 transition-colors"
           >
-            <Pause size={14} fill="currentColor" /> PARAR GRAVAÇÃO
+            <Pause size={14} fill="currentColor" /> SAIR DA GRAVAÇÃO
           </button>
         )}
 
@@ -397,6 +474,7 @@ export default function App() {
               <video
                 ref={videoRef}
                 src={localVideoUrl || DRIVE_VIDEO_URL}
+                onError={handleVideoError}
                 className="absolute inset-0 w-full h-full object-cover color-graded-video origin-center"
                 style={{ 
                   transform: `scale(${currentZoom}) translateY(-6%)`,
@@ -441,7 +519,7 @@ export default function App() {
             </div>
           )}
 
-          {/* LEGENDAS (LOWER THIRD) - Elevadas e com Órbitas Suavizadas */}
+          {/* LEGENDAS (LOWER THIRD) */}
           <div className="absolute bottom-24 left-0 right-0 px-6 z-20 pointer-events-none flex flex-col items-center">
             {activeSubtitle && (
               <div className="subtitle-container relative py-2 px-4">
@@ -476,6 +554,7 @@ export default function App() {
             )}
           </div>
 
+          {/* Na gravação final a barra azul em baixo pode não ser necessária, mas mantive para não perder o efeito */}
           <div className="absolute bottom-0 left-0 w-full h-1 bg-black/40 z-30">
             <div 
               className="h-full bg-[#0043FF] shadow-[0_0_10px_rgba(0,67,255,0.8)]" 
