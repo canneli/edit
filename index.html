@@ -1,569 +1,635 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Video, RefreshCw, Eye, EyeOff, Upload, Image as ImageIcon, Download, Info } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORY Studio - Editor Cinematográfico</title>
+    
+    <!-- Importar Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Importar Bibliotecas React -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Importar Babel (Permite rodar JSX diretamente no HTML) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-black text-white m-0 p-0 overflow-hidden w-screen h-screen">
 
-const ORY_COLORS = {
-  blue: '#0043FF',
-  dark: '#303030',
-  light: '#F4F4F4',
-  green: '#00FF00' // Chroma Key puro
-};
+    <div id="root" class="w-full h-full"></div>
 
-const subtitleData = [
-  { id: 1, start: 0.616, end: 1.850, text: "A Laurinha finalmente" },
-  { id: 2, start: 1.850, end: 3.418, text: "ouviu os meus conselhos" },
-  { id: 3, start: 3.418, end: 4.435, text: "e começou a usar" },
-  { id: 4, start: 4.435, end: 5.902, text: "os alinhadores." },
-  { id: 5, start: 5.902, end: 6.669, text: "Laurinha, agora eu quero" },
-  { id: 6, start: 6.669, end: 8.570, text: "você fale as suas experiências" },
-  { id: 7, start: 8.570, end: 9.237, text: "e principalmente" },
-  { id: 8, start: 9.237, end: 11.254, text: "as suas expectativas." },
-  { id: 9, start: 11.254, end: 12.055, text: "O mais importante," },
-  { id: 10, start: 12.055, end: 14.239, text: "está animada?" },
-  { id: 11, start: 14.239, end: 15.806, text: "Essa frase é a marca dela" },
-  { id: 12, start: 15.806, end: 17.157, text: "e eu estou animada, viu?" },
-  { id: 13, start: 17.157, end: 18.324, text: "Porque afinal de contas," },
-  { id: 14, start: 18.324, end: 18.924, text: "ela prometeu que" },
-  { id: 15, start: 18.924, end: 19.858, text: "vou ficar cinco anos" },
-  { id: 16, start: 19.858, end: 21.259, text: "mais jovem." },
-  { id: 17, start: 21.259, end: 22.843, text: "Brincadeiras a parte," },
-  { id: 18, start: 22.843, end: 24.377, text: "a doutora sempre me orientou" },
-  { id: 19, start: 24.377, end: 24.894, text: "a respeito" },
-  { id: 20, start: 24.894, end: 26.595, text: "da minha mordida ser errada" },
-  { id: 21, start: 26.595, end: 27.145, text: "e meu sorriso" },
-  { id: 22, start: 27.145, end: 27.945, text: "não me incomodava" },
-  { id: 23, start: 27.945, end: 29.429, text: "porque ele era bonito." },
-  { id: 24, start: 29.429, end: 31.663, text: "Mas o tempo passando" },
-  { id: 25, start: 31.663, end: 32.214, text: "e eu descobri" },
-  { id: 26, start: 32.214, end: 32.847, text: "que nunca é tarde" },
-  { id: 27, start: 32.847, end: 34.014, text: "para começar." },
-  { id: 28, start: 34.014, end: 34.815, text: "E com a facilidade" },
-  { id: 29, start: 34.815, end: 36.382, text: "dos alinhadores com sucesso," },
-  { id: 30, start: 36.382, end: 37.766, text: "o que eu vejo aqui na clínica," },
-  { id: 31, start: 37.766, end: 39.050, text: "nos próprios pacientes." },
-  { id: 32, start: 39.050, end: 40.217, text: "Pensei agora é minha vez." },
-  { id: 33, start: 40.217, end: 41.384, text: "Preciso botar essa arcada" },
-  { id: 34, start: 41.384, end: 42.718, text: "no local certinho" },
-  { id: 35, start: 42.718, end: 43.252, text: "para diminuir" },
-  { id: 36, start: 43.252, end: 44.036, text: "esse desconforto" },
-  { id: 37, start: 44.036, end: 46.670, text: "disfuncional da minha ATM." },
-  { id: 38, start: 46.670, end: 47.937, text: "Eu não sei muito bem o nome," },
-  { id: 39, start: 47.937, end: 48.437, text: "mas é isso." },
-  { id: 40, start: 48.437, end: 49.038, text: "Estou animada," },
-  { id: 41, start: 49.038, end: 50.305, text: "vamos aí para a jornada" },
-  { id: 42, start: 50.305, end: 51.505, text: "o tempo é reduzido," },
-  { id: 43, start: 51.505, end: 52.756, text: "então estou contando com tudo" },
-  { id: 44, start: 52.756, end: 54.173, text: "isso para ser um sucesso." }
-];
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-const DRIVE_VIDEO_URL = "https://drive.google.com/uc?export=download&id=1mhzVx6_IVbl9UZ6JOfsOj3haLKM_ZQEK";
+        // --- ÍCONES (Convertidos para SVGs nativos para evitar erros de dependência no GitHub) ---
+        const IconBase = ({ children, size = 24, className = "", fill = "none", ...props }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>{children}</svg>
+        );
+        const Play = (props) => <IconBase {...props}><polygon points="5 3 19 12 5 21 5 3"/></IconBase>;
+        const Pause = (props) => <IconBase {...props}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></IconBase>;
+        const Video = (props) => <IconBase {...props}><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></IconBase>;
+        const RefreshCw = (props) => <IconBase {...props}><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></IconBase>;
+        const Eye = (props) => <IconBase {...props}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></IconBase>;
+        const EyeOff = (props) => <IconBase {...props}><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></IconBase>;
+        const Upload = (props) => <IconBase {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></IconBase>;
+        const ImageIcon = (props) => <IconBase {...props}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></IconBase>;
+        const Download = (props) => <IconBase {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></IconBase>;
+        const AlertTriangle = (props) => <IconBase {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></IconBase>;
 
-export default function App() {
-  const [currentTime, setCurrentTime] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isRecordingMode, setIsRecordingMode] = useState(false);
-  const [activeSubtitle, setActiveSubtitle] = useState(null);
-  const [showGuides, setShowGuides] = useState(false);
-  const [bgMode, setBgMode] = useState('video');
-  const [localVideoUrl, setLocalVideoUrl] = useState('');
-  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
-  
-  const videoRef = useRef(null);
-  const fileInputRef = useRef(null);
+        // --- CONSTANTES E DADOS ---
+        const ORY_COLORS = {
+          blue: '#0043FF',
+          dark: '#303030',
+          light: '#F4F4F4',
+          green: '#00FF00'
+        };
 
-  const togglePlay = () => {
-    if (!isPlaying) {
-      if (bgMode === 'video' && videoRef.current) {
-        const playPromise = videoRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(error => {
-            console.warn("A reprodução do vídeo foi bloqueada:", error);
-          });
-        }
-      }
-      setIsPlaying(true);
-    } else {
-      if (bgMode === 'video' && videoRef.current) videoRef.current.pause();
-      setIsPlaying(false);
-    }
-  };
+        const subtitleData = [
+          { id: 1, start: 0.616, end: 1.850, text: "A Laurinha finalmente" },
+          { id: 2, start: 1.850, end: 3.418, text: "ouviu os meus conselhos" },
+          { id: 3, start: 3.418, end: 4.435, text: "e começou a usar" },
+          { id: 4, start: 4.435, end: 5.902, text: "os alinhadores." },
+          { id: 5, start: 5.902, end: 6.669, text: "Laurinha, agora eu quero" },
+          { id: 6, start: 6.669, end: 8.570, text: "você fale as suas experiências" },
+          { id: 7, start: 8.570, end: 9.237, text: "e principalmente" },
+          { id: 8, start: 9.237, end: 11.254, text: "as suas expectativas." },
+          { id: 9, start: 11.254, end: 12.055, text: "O mais importante," },
+          { id: 10, start: 12.055, end: 14.239, text: "está animada?" },
+          { id: 11, start: 14.239, end: 15.806, text: "Essa frase é a marca dela" },
+          { id: 12, start: 15.806, end: 17.157, text: "e eu estou animada, viu?" },
+          { id: 13, start: 17.157, end: 18.324, text: "Porque afinal de contas," },
+          { id: 14, start: 18.324, end: 18.924, text: "ela prometeu que" },
+          { id: 15, start: 18.924, end: 19.858, text: "vou ficar cinco anos" },
+          { id: 16, start: 19.858, end: 21.259, text: "mais jovem." },
+          { id: 17, start: 21.259, end: 22.843, text: "Brincadeiras a parte," },
+          { id: 18, start: 22.843, end: 24.377, text: "a doutora sempre me orientou" },
+          { id: 19, start: 24.377, end: 24.894, text: "a respeito" },
+          { id: 20, start: 24.894, end: 26.595, text: "da minha mordida ser errada" },
+          { id: 21, start: 26.595, end: 27.145, text: "e meu sorriso" },
+          { id: 22, start: 27.145, end: 27.945, text: "não me incomodava" },
+          { id: 23, start: 27.945, end: 29.429, text: "porque ele era bonito." },
+          { id: 24, start: 29.429, end: 31.663, text: "Mas o tempo passando" },
+          { id: 25, start: 31.663, end: 32.214, text: "e eu descobri" },
+          { id: 26, start: 32.214, end: 32.847, text: "que nunca é tarde" },
+          { id: 27, start: 32.847, end: 34.014, text: "para começar." },
+          { id: 28, start: 34.014, end: 34.815, text: "E com a facilidade" },
+          { id: 29, start: 34.815, end: 36.382, text: "dos alinhadores com sucesso," },
+          { id: 30, start: 36.382, end: 37.766, text: "o que eu vejo aqui na clínica," },
+          { id: 31, start: 37.766, end: 39.050, text: "nos próprios pacientes." },
+          { id: 32, start: 39.050, end: 40.217, text: "Pensei agora é minha vez." },
+          { id: 33, start: 40.217, end: 41.384, text: "Preciso botar essa arcada" },
+          { id: 34, start: 41.384, end: 42.718, text: "no local certinho" },
+          { id: 35, start: 42.718, end: 43.252, text: "para diminuir" },
+          { id: 36, start: 43.252, end: 44.036, text: "esse desconforto" },
+          { id: 37, start: 44.036, end: 46.670, text: "disfuncional da minha ATM." },
+          { id: 38, start: 46.670, end: 47.937, text: "Eu não sei muito bem o nome," },
+          { id: 39, start: 47.937, end: 48.437, text: "mas é isso." },
+          { id: 40, start: 48.437, end: 49.038, text: "Estou animada," },
+          { id: 41, start: 49.038, end: 50.305, text: "vamos aí para a jornada" },
+          { id: 42, start: 50.305, end: 51.505, text: "o tempo é reduzido," },
+          { id: 43, start: 51.505, end: 52.756, text: "então estou contando com tudo" },
+          { id: 44, start: 52.756, end: 54.173, text: "isso para ser um sucesso." }
+        ];
 
-  const handleVideoError = () => {
-    console.warn("Erro ao carregar a fonte de vídeo.");
-    if (bgMode === 'video' && !localVideoUrl) {
-      setBgMode('chroma');
-      alert("O navegador bloqueou a reprodução direta do vídeo do Google Drive por motivos de segurança (CORS). A visualização foi alterada para 'Chroma Key'. Por favor, use a opção 'CARREGAR FICHEIRO LOCAL'.");
-    }
-  };
+        const DRIVE_VIDEO_URL = "https://drive.google.com/uc?export=download&id=1mhzVx6_IVbl9UZ6JOfsOj3haLKM_ZQEK";
 
-  const resetTime = () => {
-    setCurrentTime(0);
-    if (videoRef.current) videoRef.current.currentTime = 0;
-  };
-
-  const handleVideoUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setLocalVideoUrl(url);
-      setBgMode('video');
-      resetTime();
-    }
-  };
-
-  useEffect(() => {
-    let lastTime = performance.now();
-    let frameId;
-
-    const loop = (now) => {
-      if (isPlaying) {
-        if (bgMode === 'video' && videoRef.current && videoRef.current.readyState >= 2 && !videoRef.current.paused) {
-          setCurrentTime(videoRef.current.currentTime);
+        // --- APLICAÇÃO PRINCIPAL ---
+        function App() {
+          const [currentTime, setCurrentTime] = useState(0);
+          const [isPlaying, setIsPlaying] = useState(false);
+          const [isRecordingMode, setIsRecordingMode] = useState(false);
+          const [activeSubtitle, setActiveSubtitle] = useState(null);
+          const [showGuides, setShowGuides] = useState(false);
+          const [bgMode, setBgMode] = useState('video');
+          const [localVideoUrl, setLocalVideoUrl] = useState('');
+          const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+          const [countdown, setCountdown] = useState(null);
           
-          if (videoRef.current.ended || videoRef.current.currentTime >= 54.2) {
-            setIsPlaying(false);
-            if (isRecordingMode) setIsRecordingMode(false);
-          }
-        } else {
-          const delta = (now - lastTime) / 1000;
-          setCurrentTime((prev) => {
-            const nextTime = prev + delta;
-            if (nextTime >= 54.2) {
+          const videoRef = useRef(null);
+          const fileInputRef = useRef(null);
+
+          const togglePlay = () => {
+            if (!isPlaying) {
+              if (bgMode === 'video' && videoRef.current) {
+                const playPromise = videoRef.current.play();
+                if (playPromise !== undefined) {
+                  playPromise.catch(error => {
+                    console.warn("A reprodução do vídeo foi bloqueada:", error);
+                  });
+                }
+              }
+              setIsPlaying(true);
+            } else {
+              if (bgMode === 'video' && videoRef.current) videoRef.current.pause();
               setIsPlaying(false);
-              if (isRecordingMode) setIsRecordingMode(false);
-              return 0;
             }
-            return nextTime;
-          });
-        }
-      }
-      lastTime = now;
-      frameId = requestAnimationFrame(loop);
-    };
+          };
 
-    frameId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(frameId);
-  }, [isPlaying, isRecordingMode, bgMode]);
+          const handleVideoError = () => {
+            console.warn("Erro ao carregar a fonte de vídeo.");
+            if (bgMode === 'video' && !localVideoUrl) {
+              setBgMode('chroma');
+              alert("O navegador bloqueou a reprodução direta do vídeo do Google Drive por motivos de segurança (CORS). A visualização foi alterada para 'Chroma Key'. Por favor, use a opção 'CARREGAR FICHEIRO LOCAL'.");
+            }
+          };
 
-  useEffect(() => {
-    const sub = subtitleData.find(s => currentTime >= s.start && currentTime <= s.end);
-    setActiveSubtitle(sub);
-  }, [currentTime]);
+          const resetTime = () => {
+            setCurrentTime(0);
+            if (videoRef.current) videoRef.current.currentTime = 0;
+          };
 
-  const startRecordingMode = () => {
-    setIsDownloadModalOpen(false);
-    setIsRecordingMode(true);
-    setShowGuides(false);
-    resetTime();
-    
-    // Forçamos o modo de vídeo para que grave TUDO (vídeo, cor, zooms, legendas)
-    setBgMode('video'); 
-    
-    // Pequeno atraso para garantir que a UI se esconde antes de iniciar
-    setTimeout(() => {
-        setIsPlaying(true);
-        if (videoRef.current) {
-            videoRef.current.play().catch(console.error);
-        }
-    }, 500);
-  };
+          const handleVideoUpload = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+              const url = URL.createObjectURL(file);
+              setLocalVideoUrl(url);
+              setBgMode('video');
+              resetTime();
+            }
+          };
 
-  const stopRecordingMode = () => {
-    setIsRecordingMode(false);
-    setIsPlaying(false);
-    if (videoRef.current) {
-      videoRef.current.pause().catch(e => console.warn(e));
-    }
-  };
+          useEffect(() => {
+            let lastTime = performance.now();
+            let frameId;
 
-  const getZoomLevel = (time) => {
-    if (time >= 4.4 && time <= 8.5) return 1.25;
-    if (time >= 15.8 && time <= 20.0) return 1.28;
-    if (time >= 24.8 && time <= 28.0) return 1.25;
-    if (time >= 40.2 && time <= 44.0) return 1.22;
-    if (time >= 50.3) return 1.25;
-    return 1.15; 
-  };
+            const loop = (now) => {
+              if (isPlaying && countdown === null) {
+                if (bgMode === 'video' && videoRef.current && videoRef.current.readyState >= 2 && !videoRef.current.paused) {
+                  setCurrentTime(videoRef.current.currentTime);
+                  
+                  if (videoRef.current.ended || videoRef.current.currentTime >= 54.2) {
+                    setIsPlaying(false);
+                  }
+                } else {
+                  const delta = (now - lastTime) / 1000;
+                  setCurrentTime((prev) => {
+                    const nextTime = prev + delta;
+                    if (nextTime >= 54.2) {
+                      setIsPlaying(false);
+                      return 0;
+                    }
+                    return nextTime;
+                  });
+                }
+              }
+              lastTime = now;
+              frameId = requestAnimationFrame(loop);
+            };
 
-  const currentZoom = getZoomLevel(currentTime);
+            frameId = requestAnimationFrame(loop);
+            return () => cancelAnimationFrame(frameId);
+          }, [isPlaying, countdown, bgMode]);
 
-  return (
-    <div className="flex w-full h-screen bg-[#0a0a0a] text-white font-sans overflow-hidden">
-      <style>{`
-        /* Animação Bouncy 60fps para Palavras */
-        @keyframes popIn {
-          0% { transform: scale(0.85) translateY(15px); opacity: 0; filter: blur(4px); }
-          60% { transform: scale(1.05) translateY(-2px); opacity: 1; filter: blur(0px); }
-          100% { transform: scale(1) translateY(0); opacity: 1; filter: blur(0px); }
-        }
-        .word-reveal {
-          display: inline-block;
-          animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-          opacity: 0; 
-        }
-        
-        /* Efeitos Glow Reconstruídos para Máxima Legibilidade */
-        .text-glow-white {
-          text-shadow: 0 3px 8px rgba(0,0,0,0.95), 0 0 15px rgba(255,255,255,0.25);
-        }
+          useEffect(() => {
+            const sub = subtitleData.find(s => currentTime >= s.start && currentTime <= s.end);
+            setActiveSubtitle(sub);
+          }, [currentTime]);
 
-        .text-glow-blue {
-          color: #0043FF;
-          -webkit-text-stroke: 1px rgba(255,255,255,0.2);
-          animation: pulseGlowBlue 2s infinite alternate ease-in-out;
-        }
-
-        @keyframes pulseGlowBlue {
-          0% { text-shadow: 0 3px 6px rgba(0,0,0,0.95), 0 0 15px rgba(0,67,255,0.6), 0 0 25px rgba(0,67,255,0.4); }
-          100% { text-shadow: 0 3px 6px rgba(0,0,0,0.95), 0 0 20px rgba(0,67,255,1), 0 0 40px rgba(0,67,255,0.8), 0 0 60px rgba(0,67,255,0.5); }
-        }
-        
-        .text-shadow-logo {
-          text-shadow: 0 2px 8px rgba(0,0,0,0.25);
-        }
-        
-        /* Animação do Logótipo */
-        @keyframes bounce-slow {
-          0%, 100% { transform: translateY(-5%); }
-          50% { transform: translateY(5%); }
-        }
-        .animate-bounce-slow {
-          animation: bounce-slow 2.5s infinite ease-in-out;
-        }
-
-        /* EFEITOS DA LEGENDA (FLUTUAÇÃO E ÓRBITA) */
-        @keyframes containerFloat {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-6px); }
-        }
-        .subtitle-container {
-          animation: containerFloat 4s ease-in-out infinite;
-        }
-
-        @keyframes orbit {
-          0% { transform: rotate(0deg) translateX(120px) rotate(0deg) scale(1); }
-          50% { transform: rotate(180deg) translateX(120px) rotate(-180deg) scale(1.5); }
-          100% { transform: rotate(360deg) translateX(120px) rotate(-360deg) scale(1); }
-        }
-        @keyframes orbit-reverse {
-          0% { transform: rotate(360deg) translateX(80px) rotate(-360deg) scale(0.8); }
-          50% { transform: rotate(180deg) translateX(80px) rotate(-180deg) scale(1.2); }
-          100% { transform: rotate(0deg) translateX(80px) rotate(0deg) scale(0.8); }
-        }
-        .orbiting-dot-1 {
-          position: absolute;
-          top: 50%; left: 50%;
-          margin-top: -3px; margin-left: -3px;
-          width: 6px; height: 6px;
-          background-color: #0043FF;
-          border-radius: 50%;
-          box-shadow: 0 0 12px 4px rgba(0,67,255,0.5);
-          animation: orbit 5s linear infinite;
-        }
-        .orbiting-dot-2 {
-          position: absolute;
-          top: 50%; left: 50%;
-          margin-top: -2px; margin-left: -2px;
-          width: 4px; height: 4px;
-          background-color: #F4F4F4;
-          border-radius: 50%;
-          box-shadow: 0 0 8px 2px rgba(255,255,255,0.4);
-          animation: orbit-reverse 4s linear infinite;
-        }
-        
-        /* FILTROS CINEMÁTICOS DE IMAGEM */
-        .color-graded-video {
-          filter: contrast(1.08) saturate(1.15) brightness(1.03) sepia(0.08) hue-rotate(-2deg);
-        }
-        
-        /* EFEITOS DE TELA MODERNOS (Overlay) */
-        .film-grain {
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-          opacity: 0.05;
-          mix-blend-mode: overlay;
-          pointer-events: none;
-        }
-        .vignette-effect {
-          background: radial-gradient(circle, rgba(0,0,0,0) 50%, rgba(0,0,0,0.5) 100%);
-          pointer-events: none;
-        }
-        @keyframes lightLeak {
-          0%, 100% { opacity: 0; transform: translateX(-100%) scale(1); }
-          50% { opacity: 0.15; transform: translateX(100%) scale(1.5); }
-        }
-        .light-flare {
-          background: radial-gradient(circle, rgba(0,67,255,0.4) 0%, rgba(0,0,0,0) 60%);
-          animation: lightLeak 12s infinite ease-in-out;
-          pointer-events: none;
-        }
-      `}</style>
-
-      {/* MODAL DE INSTRUÇÕES DE DOWNLOAD (Atualizado para Gravação Direta) */}
-      {isDownloadModalOpen && (
-        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-          <div className="bg-[#111] border border-white/10 rounded-3xl p-8 max-w-lg w-full shadow-2xl relative animate-in fade-in zoom-in duration-300">
-            <h2 className="text-2xl font-black mb-2 flex items-center gap-3 tracking-tight">
-              <Download className="text-[#0043FF]" size={28} /> Como Exportar o Vídeo Completo
-            </h2>
-            <p className="text-sm text-neutral-400 mb-8 leading-relaxed">
-              Para capturar a edição completa (incluindo tratamento de cor, vídeo de fundo e legendas 60fps), utilize o seu gravador de ecrã:
-            </p>
+          const startRecordingMode = () => {
+            setIsDownloadModalOpen(false);
+            setIsRecordingMode(true);
+            setShowGuides(false);
+            resetTime();
+            setBgMode('video'); 
             
-            <div className="space-y-6 mb-8">
-              <div className="flex gap-4 items-start">
-                <div className="w-8 h-8 rounded-full bg-[#0043FF]/20 text-[#0043FF] border border-[#0043FF]/30 flex items-center justify-center shrink-0 font-bold">1</div>
-                <div>
-                  <h3 className="font-bold text-white mb-1">Inicie a Gravação do Seu Ecrã</h3>
-                  <p className="text-xs text-neutral-400">Utilize o gravador nativo do seu computador e selecione apenas a área do vídeo. (Mac: <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-white">Cmd + Shift + 5</kbd> | Win: <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-white">Win + G</kbd> ou Ferramenta de Recorte).</p>
-                </div>
-              </div>
-              <div className="flex gap-4 items-start">
-                <div className="w-8 h-8 rounded-full bg-[#0043FF]/20 text-[#0043FF] border border-[#0043FF]/30 flex items-center justify-center shrink-0 font-bold">2</div>
-                <div>
-                  <h3 className="font-bold text-white mb-1">Dê Play na Animação</h3>
-                  <p className="text-xs text-neutral-400">Clique em "Gravar Vídeo Completo" abaixo. A barra lateral irá desaparecer e o vídeo vai tocar automaticamente do início ao fim com todos os efeitos.</p>
-                </div>
-              </div>
-              <div className="flex gap-4 items-start">
-                <div className="w-8 h-8 rounded-full bg-[#0043FF]/20 text-[#0043FF] border border-[#0043FF]/30 flex items-center justify-center shrink-0 font-bold">3</div>
-                <div>
-                  <h3 className="font-bold text-white mb-1">Recorte e Partilhe</h3>
-                  <p className="text-xs text-neutral-400">Basta parar a gravação de ecrã quando o vídeo terminar, cortar o início/fim e o seu vídeo final está 100% pronto para o Instagram/TikTok!</p>
-                </div>
-              </div>
-            </div>
+            setCountdown(5);
+          };
 
-            <div className="flex gap-3">
-              <button 
-                onClick={() => setIsDownloadModalOpen(false)}
-                className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-colors text-sm"
-              >
-                VOLTAR
-              </button>
-              <button 
-                onClick={startRecordingMode}
-                className="flex-1 py-3 bg-[#0043FF] hover:bg-blue-600 text-white rounded-xl font-bold transition-colors shadow-lg shadow-blue-500/20 text-sm flex items-center justify-center gap-2"
-              >
-                <Video size={16} /> GRAVAR VÍDEO COMPLETO
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          useEffect(() => {
+            if (countdown === null) return;
 
-      {/* PAINEL LATERAL */}
-      {!isRecordingMode && (
-        <div className="w-80 h-full border-r border-white/10 bg-[#111] p-6 flex flex-col gap-6 z-20 shrink-0 overflow-y-auto shadow-2xl">
-          <div className="space-y-1 pb-4 border-b border-white/5">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-[#0043FF] rounded-full flex items-center justify-center font-bold text-sm shadow-[0_0_15px_rgba(0,67,255,0.4)]">O</div>
-              <h1 className="text-lg font-bold tracking-tight">ORY STUDIO</h1>
-            </div>
-            <p className="text-[10px] text-neutral-500 font-medium uppercase tracking-[0.2em]">Cinematic Edit</p>
-          </div>
+            if (countdown > 0) {
+              const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+              return () => clearTimeout(timer);
+            } else if (countdown === 0) {
+              setCountdown(null);
+              setIsPlaying(true);
+              if (videoRef.current) {
+                videoRef.current.play().catch(console.error);
+              }
+            }
+          }, [countdown]);
 
-          <div className="space-y-3">
-            <button 
-              onClick={togglePlay}
-              className={`w-full py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${isPlaying ? 'bg-white text-black shadow-lg' : 'bg-[#0043FF] text-white hover:bg-blue-600 shadow-lg shadow-blue-500/20'}`}
-            >
-              {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
-              {isPlaying ? 'PAUSAR PREVIEW' : 'REPRODUZIR PREVIEW'}
-            </button>
-            <button 
-              onClick={resetTime}
-              className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold flex items-center justify-center gap-2 transition-colors"
-            >
-              <RefreshCw size={14} /> RESETAR TEMPO
-            </button>
-          </div>
+          const stopRecordingMode = () => {
+            setIsRecordingMode(false);
+            setIsPlaying(false);
+            setCountdown(null);
+            if (videoRef.current) {
+              videoRef.current.pause().catch(e => console.warn(e));
+            }
+          };
 
-          <div className="pt-2 space-y-3">
-            <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">Opções de Visualização</p>
-            
-            <div className="grid grid-cols-2 gap-2 bg-black/50 p-1 rounded-xl border border-white/5">
-              <button 
-                onClick={() => setBgMode('video')}
-                className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${bgMode === 'video' ? 'bg-white text-black' : 'text-neutral-500 hover:text-white'}`}
-              >
-                <Video size={14} /> VÍDEO
-              </button>
-              <button 
-                onClick={() => setBgMode('chroma')}
-                className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${bgMode === 'chroma' ? 'bg-[#00FF00] text-black' : 'text-neutral-500 hover:text-white'}`}
-              >
-                <ImageIcon size={14} /> CHROMA
-              </button>
-            </div>
+          const getZoomLevel = (time) => {
+            if (time >= 4.4 && time <= 8.5) return 1.25;
+            if (time >= 15.8 && time <= 20.0) return 1.28;
+            if (time >= 24.8 && time <= 28.0) return 1.25;
+            if (time >= 40.2 && time <= 44.0) return 1.22;
+            if (time >= 50.3) return 1.25;
+            return 1.15; 
+          };
 
-            <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
-              <input 
-                type="file" 
-                accept="video/*" 
-                className="hidden" 
-                ref={fileInputRef} 
-                onChange={handleVideoUpload}
-              />
-              <button 
-                onClick={() => fileInputRef.current.click()}
-                className="w-full py-3 px-4 rounded-xl border border-white/10 text-xs font-bold flex items-center justify-between text-neutral-400 hover:bg-white/5 transition-all"
-              >
-                CARREGAR FICHEIRO LOCAL
-                <Upload size={16} />
-              </button>
-            </div>
+          const currentZoom = getZoomLevel(currentTime);
 
-            <button 
-              onClick={() => setShowGuides(!showGuides)}
-              className={`w-full mt-2 py-3 px-4 rounded-xl border text-xs font-bold flex items-center justify-between transition-all ${showGuides ? 'border-[#0043FF] bg-[#0043FF]/10 text-[#0043FF]' : 'border-white/10 text-neutral-400 hover:bg-white/5'}`}
-            >
-              MOSTRAR GUIAS DE ROSTO
-              {showGuides ? <Eye size={16} /> : <EyeOff size={16} />}
-            </button>
-          </div>
-
-          <div className="mt-auto space-y-4 pt-4">
-            <button 
-              onClick={() => setIsDownloadModalOpen(true)}
-              className="w-full py-4 rounded-2xl font-black text-sm shadow-xl transition-all flex flex-col items-center justify-center gap-1 bg-white text-black hover:scale-[1.02]"
-            >
-              <div className="flex items-center gap-2">
-                <Download size={18} />
-                COMO BAIXAR / EXPORTAR
-              </div>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ÁREA DE RENDERIZAÇÃO PRINCIPAL */}
-      <div className="flex-1 h-full flex items-center justify-center relative p-8">
-        
-        {/* Botão de Cancelar Gravação (Colocado fora da área 9:16 para não aparecer na gravação) */}
-        {isRecordingMode && (
-          <button 
-            onClick={stopRecordingMode}
-            className="absolute top-6 left-6 z-50 px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-full shadow-lg hover:bg-red-700 flex items-center gap-2 transition-colors"
-          >
-            <Pause size={14} fill="currentColor" /> SAIR DA GRAVAÇÃO
-          </button>
-        )}
-
-        {!isRecordingMode && (
-          <div className="absolute top-6 right-6 flex items-center gap-4 z-50 bg-black/40 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10">
-             <div className="flex flex-col items-end">
-               <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-[0.2em]">Timecode</span>
-               <span className="text-xl font-mono text-white tracking-widest leading-none mt-1">{currentTime.toFixed(2)}s</span>
-             </div>
-          </div>
-        )}
-
-        <div 
-          className="relative overflow-hidden shadow-2xl transition-all duration-500 flex items-center justify-center"
-          style={{ 
-            aspectRatio: '9/16', 
-            height: '100%',
-            maxHeight: isRecordingMode ? '95vh' : '85vh',
-            backgroundColor: bgMode === 'chroma' ? ORY_COLORS.green : '#000',
-            borderRadius: isRecordingMode ? '0px' : '20px',
-            border: isRecordingMode ? 'none' : '1px solid rgba(255,255,255,0.15)',
-            boxShadow: isRecordingMode ? 'none' : '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 80px rgba(0,67,255,0.1)'
-          }}
-        >
-          {bgMode === 'video' && (
-            <div className="absolute inset-0 w-full h-full bg-black z-0">
-              <video
-                ref={videoRef}
-                src={localVideoUrl || DRIVE_VIDEO_URL}
-                onError={handleVideoError}
-                className="absolute inset-0 w-full h-full object-cover color-graded-video origin-center"
-                style={{ 
-                  transform: `scale(${currentZoom}) translateY(-6%)`,
-                  transition: 'transform 0.8s cubic-bezier(0.25, 1, 0.5, 1)' 
-                }}
-                playsInline
-                preload="auto"
-              />
-              <div className="absolute inset-0 vignette-effect"></div>
-              <div className="absolute inset-0 film-grain"></div>
-              <div className="absolute inset-0 light-flare w-full h-[200%]"></div>
-            </div>
-          )}
-
-          <div className="absolute top-12 left-1/2 -translate-x-1/2 flex flex-col items-end pointer-events-none z-10">
-             <div className="relative">
-                <div 
-                  className="absolute -top-1 -right-2 w-10 h-10 rounded-full bg-[#0043FF] animate-bounce-slow shadow-[0_0_20px_rgba(0,67,255,0.3)]"
-                  style={{ zIndex: 0 }}
-                ></div>
+          return (
+            <div className="flex w-full h-screen bg-[#0a0a0a] text-white font-sans overflow-hidden">
+              <style>{`
+                /* Animação Bouncy 60fps para Palavras */
+                @keyframes popIn {
+                  0% { transform: scale(0.85) translateY(15px); opacity: 0; filter: blur(4px); }
+                  60% { transform: scale(1.05) translateY(-2px); opacity: 1; filter: blur(0px); }
+                  100% { transform: scale(1) translateY(0); opacity: 1; filter: blur(0px); }
+                }
+                .word-reveal {
+                  display: inline-block;
+                  animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+                  opacity: 0; 
+                }
                 
-                <span className="relative z-10 text-[48px] leading-none font-black text-[#303030] tracking-tighter text-shadow-logo">
-                  ORY
-                </span>
-             </div>
-             
-             <span className="text-[16px] leading-none text-[#0043FF] font-medium lowercase pr-1 mt-1 tracking-wide text-shadow-logo">
-               clínica
-             </span>
-          </div>
+                /* Efeitos Glow Reconstruídos */
+                .text-glow-white {
+                  text-shadow: 0 3px 8px rgba(0,0,0,0.95), 0 0 15px rgba(255,255,255,0.25);
+                }
 
-          {showGuides && !isRecordingMode && (
-            <div className="absolute inset-0 pointer-events-none z-10 border border-white/20">
-              <div className="absolute inset-0 flex items-center justify-center">
-                 <div className="w-64 h-64 border-2 border-dashed border-white/30 rounded-full bg-white/5 flex items-center justify-center">
-                    <span className="text-[10px] text-white/60 font-bold uppercase tracking-widest text-center shadow-lg">
-                      Rosto do<br/>Paciente
-                    </span>
-                 </div>
-              </div>
-              <div className="absolute bottom-24 w-full h-[1px] bg-red-500/30"></div>
-            </div>
-          )}
+                .text-glow-blue {
+                  color: #0043FF;
+                  -webkit-text-stroke: 1px rgba(255,255,255,0.2);
+                  animation: pulseGlowBlue 2s infinite alternate ease-in-out;
+                }
 
-          {/* LEGENDAS (LOWER THIRD) */}
-          <div className="absolute bottom-24 left-0 right-0 px-6 z-20 pointer-events-none flex flex-col items-center">
-            {activeSubtitle && (
-              <div className="subtitle-container relative py-2 px-4">
+                @keyframes pulseGlowBlue {
+                  0% { text-shadow: 0 3px 6px rgba(0,0,0,0.95), 0 0 15px rgba(0,67,255,0.6), 0 0 25px rgba(0,67,255,0.4); }
+                  100% { text-shadow: 0 3px 6px rgba(0,0,0,0.95), 0 0 20px rgba(0,67,255,1), 0 0 40px rgba(0,67,255,0.8), 0 0 60px rgba(0,67,255,0.5); }
+                }
                 
-                {/* Partículas em Órbita */}
-                <div className="absolute inset-0 pointer-events-none overflow-visible z-0 opacity-40">
-                   <div className="orbiting-dot-1"></div>
-                   <div className="orbiting-dot-2"></div>
-                </div>
+                .text-shadow-logo {
+                  text-shadow: 0 2px 8px rgba(0,0,0,0.25);
+                }
+                
+                /* Animação do Logótipo */
+                @keyframes bounce-slow {
+                  0%, 100% { transform: translateY(-5%); }
+                  50% { transform: translateY(5%); }
+                }
+                .animate-bounce-slow {
+                  animation: bounce-slow 2.5s infinite ease-in-out;
+                }
 
-                {/* Texto */}
-                <div className="relative flex flex-wrap justify-center gap-x-1.5 gap-y-0 max-w-[95%] text-center z-10 leading-[1.1]">
-                  {activeSubtitle.text.split(' ').map((word, idx) => {
-                    const isKeyword = word.length > 7 || word.includes('Laurinha') || word.includes('alinhadores') || word.includes('animada');
-                    return (
-                      <span 
-                        key={`${activeSubtitle.id}-${idx}`}
-                        className="word-reveal"
-                        style={{ animationDelay: `${idx * 0.05}s` }}
+                /* EFEITOS DA LEGENDA (FLUTUAÇÃO E ÓRBITA) */
+                @keyframes containerFloat {
+                  0%, 100% { transform: translateY(0px); }
+                  50% { transform: translateY(-6px); }
+                }
+                .subtitle-container {
+                  animation: containerFloat 4s ease-in-out infinite;
+                }
+
+                @keyframes orbit {
+                  0% { transform: rotate(0deg) translateX(120px) rotate(0deg) scale(1); }
+                  50% { transform: rotate(180deg) translateX(120px) rotate(-180deg) scale(1.5); }
+                  100% { transform: rotate(360deg) translateX(120px) rotate(-360deg) scale(1); }
+                }
+                @keyframes orbit-reverse {
+                  0% { transform: rotate(360deg) translateX(80px) rotate(-360deg) scale(0.8); }
+                  50% { transform: rotate(180deg) translateX(80px) rotate(-180deg) scale(1.2); }
+                  100% { transform: rotate(0deg) translateX(80px) rotate(0deg) scale(0.8); }
+                }
+                .orbiting-dot-1 {
+                  position: absolute;
+                  top: 50%; left: 50%;
+                  margin-top: -3px; margin-left: -3px;
+                  width: 6px; height: 6px;
+                  background-color: #0043FF;
+                  border-radius: 50%;
+                  box-shadow: 0 0 12px 4px rgba(0,67,255,0.5);
+                  animation: orbit 5s linear infinite;
+                }
+                .orbiting-dot-2 {
+                  position: absolute;
+                  top: 50%; left: 50%;
+                  margin-top: -2px; margin-left: -2px;
+                  width: 4px; height: 4px;
+                  background-color: #F4F4F4;
+                  border-radius: 50%;
+                  box-shadow: 0 0 8px 2px rgba(255,255,255,0.4);
+                  animation: orbit-reverse 4s linear infinite;
+                }
+                
+                /* FILTROS CINEMÁTICOS DE IMAGEM */
+                .color-graded-video {
+                  filter: contrast(1.08) saturate(1.15) brightness(1.03) sepia(0.08) hue-rotate(-2deg);
+                }
+                
+                /* EFEITOS DE TELA MODERNOS (Overlay) */
+                .film-grain {
+                  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+                  opacity: 0.05;
+                  mix-blend-mode: overlay;
+                  pointer-events: none;
+                }
+                .vignette-effect {
+                  background: radial-gradient(circle, rgba(0,0,0,0) 50%, rgba(0,0,0,0.5) 100%);
+                  pointer-events: none;
+                }
+                @keyframes lightLeak {
+                  0%, 100% { opacity: 0; transform: translateX(-100%) scale(1); }
+                  50% { opacity: 0.15; transform: translateX(100%) scale(1.5); }
+                }
+                .light-flare {
+                  background: radial-gradient(circle, rgba(0,67,255,0.4) 0%, rgba(0,0,0,0) 60%);
+                  animation: lightLeak 12s infinite ease-in-out;
+                  pointer-events: none;
+                }
+              `}</style>
+
+              {/* MODAL DE INSTRUÇÕES CLARAS DE DOWNLOAD */}
+              {isDownloadModalOpen && (
+                <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
+                  <div className="bg-[#111] border border-white/10 rounded-3xl p-8 max-w-lg w-full shadow-2xl relative">
+                    <h2 className="text-2xl font-black mb-2 flex items-center gap-3 tracking-tight text-white">
+                      <AlertTriangle className="text-yellow-500" size={28} /> Como Exportar o Vídeo
+                    </h2>
+                    <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl mb-6">
+                       <p className="text-sm text-yellow-200/80 leading-relaxed">
+                         Para guardar a sua edição final em alta qualidade, grave a sua tela com o reprodutor em ecrã inteiro!
+                       </p>
+                    </div>
+                    
+                    <div className="space-y-6 mb-8">
+                      <div className="flex gap-4 items-start">
+                        <div className="w-8 h-8 rounded-full bg-[#0043FF]/20 text-[#0043FF] border border-[#0043FF]/30 flex items-center justify-center shrink-0 font-bold">1</div>
+                        <div>
+                          <h3 className="font-bold text-white mb-1">Prepare o Gravador de Ecrã</h3>
+                          <p className="text-xs text-neutral-400">Abra a ferramenta do seu sistema (Mac: <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-white">Cmd + Shift + 5</kbd> | Win: <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-white">Win + G</kbd> ou Ferramenta de Recorte de Vídeo).</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-4 items-start">
+                        <div className="w-8 h-8 rounded-full bg-[#0043FF]/20 text-[#0043FF] border border-[#0043FF]/30 flex items-center justify-center shrink-0 font-bold">2</div>
+                        <div>
+                          <h3 className="font-bold text-white mb-1">Prepare a Tela Limpa</h3>
+                          <p className="text-xs text-neutral-400">Clique no botão azul abaixo. O ecrã ficará limpo e terá <b>5 segundos</b> para clicar no botão de iniciar gravação do seu computador.</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-4 items-start">
+                        <div className="w-8 h-8 rounded-full bg-[#0043FF]/20 text-[#0043FF] border border-[#0043FF]/30 flex items-center justify-center shrink-0 font-bold">3</div>
+                        <div>
+                          <h3 className="font-bold text-white mb-1">Grave até ao fim</h3>
+                          <p className="text-xs text-neutral-400">O vídeo irá tocar perfeitamente e parar sozinho. Quando terminar, pare o gravador do computador e o seu ficheiro estará pronto!</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button 
+                        onClick={() => setIsDownloadModalOpen(false)}
+                        className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-colors text-sm"
                       >
-                        <span className={`
-                          text-[26px] md:text-[30px] font-black uppercase tracking-tight transition-all duration-300
-                          ${isKeyword ? 'text-glow-blue' : 'text-[#F4F4F4] text-glow-white'}
-                        `}>
-                          {word}
+                        VOLTAR
+                      </button>
+                      <button 
+                        onClick={startRecordingMode}
+                        className="flex-1 py-3 bg-[#0043FF] hover:bg-blue-600 text-white rounded-xl font-bold transition-colors shadow-lg shadow-blue-500/20 text-sm flex items-center justify-center gap-2"
+                      >
+                        <Video size={16} /> PREPARAR TELA PARA GRAVAR
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* PAINEL LATERAL */}
+              {!isRecordingMode && (
+                <div className="w-80 h-full border-r border-white/10 bg-[#111] p-6 flex flex-col gap-6 z-20 shrink-0 overflow-y-auto shadow-2xl">
+                  <div className="space-y-1 pb-4 border-b border-white/5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-[#0043FF] rounded-full flex items-center justify-center font-bold text-sm shadow-[0_0_15px_rgba(0,67,255,0.4)]">O</div>
+                      <h1 className="text-lg font-bold tracking-tight">ORY STUDIO</h1>
+                    </div>
+                    <p className="text-[10px] text-neutral-500 font-medium uppercase tracking-[0.2em]">Cinematic Edit</p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <button 
+                      onClick={togglePlay}
+                      className={`w-full py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${isPlaying ? 'bg-white text-black shadow-lg' : 'bg-[#0043FF] text-white hover:bg-blue-600 shadow-lg shadow-blue-500/20'}`}
+                    >
+                      {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+                      {isPlaying ? 'PAUSAR PREVIEW' : 'REPRODUZIR PREVIEW'}
+                    </button>
+                    <button 
+                      onClick={resetTime}
+                      className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <RefreshCw size={14} /> RESETAR TEMPO
+                    </button>
+                  </div>
+
+                  <div className="pt-2 space-y-3">
+                    <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">Opções de Visualização</p>
+                    
+                    <div className="grid grid-cols-2 gap-2 bg-black/50 p-1 rounded-xl border border-white/5">
+                      <button 
+                        onClick={() => setBgMode('video')}
+                        className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${bgMode === 'video' ? 'bg-white text-black' : 'text-neutral-500 hover:text-white'}`}
+                      >
+                        <Video size={14} /> VÍDEO
+                      </button>
+                      <button 
+                        onClick={() => setBgMode('chroma')}
+                        className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${bgMode === 'chroma' ? 'bg-[#00FF00] text-black' : 'text-neutral-500 hover:text-white'}`}
+                      >
+                        <ImageIcon size={14} /> CHROMA
+                      </button>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
+                      <input 
+                        type="file" 
+                        accept="video/*" 
+                        className="hidden" 
+                        ref={fileInputRef} 
+                        onChange={handleVideoUpload}
+                      />
+                      <button 
+                        onClick={() => fileInputRef.current.click()}
+                        className="w-full py-3 px-4 rounded-xl border border-white/10 text-xs font-bold flex items-center justify-between text-neutral-400 hover:bg-white/5 transition-all"
+                      >
+                        CARREGAR FICHEIRO LOCAL
+                        <Upload size={16} />
+                      </button>
+                    </div>
+
+                    <button 
+                      onClick={() => setShowGuides(!showGuides)}
+                      className={`w-full mt-2 py-3 px-4 rounded-xl border text-xs font-bold flex items-center justify-between transition-all ${showGuides ? 'border-[#0043FF] bg-[#0043FF]/10 text-[#0043FF]' : 'border-white/10 text-neutral-400 hover:bg-white/5'}`}
+                    >
+                      MOSTRAR GUIAS DE ROSTO
+                      {showGuides ? <Eye size={16} /> : <EyeOff size={16} />}
+                    </button>
+                  </div>
+
+                  <div className="mt-auto space-y-4 pt-4">
+                    <button 
+                      onClick={() => setIsDownloadModalOpen(true)}
+                      className="w-full py-4 rounded-2xl font-black text-sm shadow-xl transition-all flex flex-col items-center justify-center gap-1 bg-white text-black hover:scale-[1.02]"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Download size={18} />
+                        TUTORIAL PARA EXPORTAR
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ÁREA DE RENDERIZAÇÃO PRINCIPAL */}
+              <div className="flex-1 h-full flex items-center justify-center relative p-0 sm:p-8 bg-black">
+                
+                {/* OVERLAY DE CONTAGEM DECRESCENTE PARA GRAVAÇÃO MANUAL */}
+                {countdown !== null && countdown > 0 && (
+                  <div className="absolute inset-0 z-[200] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md">
+                    <h2 className="text-4xl font-black text-white mb-6 text-center leading-tight">
+                      Inicie o seu programa de Gravação de Ecrã<br/>
+                      <span className="text-[#0043FF]">O vídeo arranca em:</span>
+                    </h2>
+                    <div className="text-9xl font-black text-white drop-shadow-[0_0_30px_rgba(0,67,255,0.8)] animate-pulse">
+                      {countdown}
+                    </div>
+                    <p className="mt-8 text-neutral-400 font-medium">A interface ficará limpa assim que a contagem terminar.</p>
+                  </div>
+                )}
+                
+                {/* Botão de Cancelar Gravação */}
+                {isRecordingMode && countdown === null && (
+                  <button 
+                    onClick={stopRecordingMode}
+                    className="absolute top-6 left-6 z-50 px-4 py-2 bg-red-600/30 hover:bg-red-600 text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-2 transition-all opacity-20 hover:opacity-100"
+                  >
+                    <Pause size={14} fill="currentColor" /> SAIR
+                  </button>
+                )}
+
+                {!isRecordingMode && (
+                  <div className="absolute top-6 right-6 flex items-center gap-4 z-50 bg-black/40 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 hidden sm:flex">
+                     <div className="flex flex-col items-end">
+                       <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-[0.2em]">Timecode</span>
+                       <span className="text-xl font-mono text-white tracking-widest leading-none mt-1">{currentTime.toFixed(2)}s</span>
+                     </div>
+                  </div>
+                )}
+
+                <div 
+                  className="relative overflow-hidden transition-all duration-500 flex items-center justify-center"
+                  style={{ 
+                    aspectRatio: '9/16', 
+                    height: '100%',
+                    maxHeight: isRecordingMode ? '100vh' : '85vh',
+                    backgroundColor: bgMode === 'chroma' ? ORY_COLORS.green : '#000',
+                    borderRadius: isRecordingMode ? '0px' : '20px',
+                    border: isRecordingMode ? 'none' : '1px solid rgba(255,255,255,0.15)',
+                    boxShadow: isRecordingMode ? 'none' : '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 80px rgba(0,67,255,0.1)'
+                  }}
+                >
+                  {bgMode === 'video' && (
+                    <div className="absolute inset-0 w-full h-full bg-black z-0">
+                      <video
+                        ref={videoRef}
+                        src={localVideoUrl || DRIVE_VIDEO_URL}
+                        onError={handleVideoError}
+                        className="absolute inset-0 w-full h-full object-cover color-graded-video origin-center"
+                        style={{ 
+                          transform: `scale(${currentZoom}) translateY(-6%)`,
+                          transition: 'transform 0.8s cubic-bezier(0.25, 1, 0.5, 1)' 
+                        }}
+                        playsInline
+                        preload="auto"
+                      />
+                      <div className="absolute inset-0 vignette-effect"></div>
+                      <div className="absolute inset-0 film-grain"></div>
+                      <div className="absolute inset-0 light-flare w-full h-[200%]"></div>
+                    </div>
+                  )}
+
+                  <div className="absolute top-12 left-1/2 -translate-x-1/2 flex flex-col items-end pointer-events-none z-10">
+                     <div className="relative">
+                        <div 
+                          className="absolute -top-1 -right-2 w-10 h-10 rounded-full bg-[#0043FF] animate-bounce-slow shadow-[0_0_20px_rgba(0,67,255,0.3)]"
+                          style={{ zIndex: 0 }}
+                        ></div>
+                        
+                        <span className="relative z-10 text-[48px] leading-none font-black text-[#303030] tracking-tighter text-shadow-logo">
+                          ORY
                         </span>
-                      </span>
-                    );
-                  })}
+                     </div>
+                     
+                     <span className="text-[16px] leading-none text-[#0043FF] font-medium lowercase pr-1 mt-1 tracking-wide text-shadow-logo">
+                       clínica
+                     </span>
+                  </div>
+
+                  {showGuides && !isRecordingMode && (
+                    <div className="absolute inset-0 pointer-events-none z-10 border border-white/20">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                         <div className="w-64 h-64 border-2 border-dashed border-white/30 rounded-full bg-white/5 flex items-center justify-center">
+                            <span className="text-[10px] text-white/60 font-bold uppercase tracking-widest text-center shadow-lg">
+                              Rosto do<br/>Paciente
+                            </span>
+                         </div>
+                      </div>
+                      <div className="absolute bottom-24 w-full h-[1px] bg-red-500/30"></div>
+                    </div>
+                  )}
+
+                  {/* LEGENDAS (LOWER THIRD) */}
+                  <div className="absolute bottom-24 left-0 right-0 px-6 z-20 pointer-events-none flex flex-col items-center">
+                    {activeSubtitle && (
+                      <div className="subtitle-container relative py-2 px-4">
+                        
+                        {/* Partículas em Órbita */}
+                        <div className="absolute inset-0 pointer-events-none overflow-visible z-0 opacity-40">
+                           <div className="orbiting-dot-1"></div>
+                           <div className="orbiting-dot-2"></div>
+                        </div>
+
+                        {/* Texto */}
+                        <div className="relative flex flex-wrap justify-center gap-x-1.5 gap-y-0 max-w-[95%] text-center z-10 leading-[1.1]">
+                          {activeSubtitle.text.split(' ').map((word, idx) => {
+                            const isKeyword = word.length > 7 || word.includes('Laurinha') || word.includes('alinhadores') || word.includes('animada');
+                            return (
+                              <span 
+                                key={`${activeSubtitle.id}-${idx}`}
+                                className="word-reveal"
+                                style={{ animationDelay: `${idx * 0.05}s` }}
+                              >
+                                <span className={`
+                                  text-[26px] md:text-[30px] font-black uppercase tracking-tight transition-all duration-300
+                                  ${isKeyword ? 'text-glow-blue' : 'text-[#F4F4F4] text-glow-white'}
+                                `}>
+                                  {word}
+                                </span>
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="absolute bottom-0 left-0 w-full h-1 bg-black/40 z-30">
+                    <div 
+                      className="h-full bg-[#0043FF] shadow-[0_0_10px_rgba(0,67,255,0.8)]" 
+                      style={{ width: `${(currentTime / 54.2) * 100}%` }}
+                    ></div>
+                  </div>
+
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          );
+        }
 
-          {/* Na gravação final a barra azul em baixo pode não ser necessária, mas mantive para não perder o efeito */}
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-black/40 z-30">
-            <div 
-              className="h-full bg-[#0043FF] shadow-[0_0_10px_rgba(0,67,255,0.8)]" 
-              style={{ width: `${(currentTime / 54.2) * 100}%` }}
-            ></div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  );
-}
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
