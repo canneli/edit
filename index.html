@@ -1,0 +1,295 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Play, Pause, Download, RefreshCw, Layout, Eye, EyeOff } from 'lucide-react';
+
+const ORY_COLORS = {
+  blue: '#0043FF',
+  dark: '#303030',
+  light: '#F4F4F4',
+  green: '#00FF00' // Chroma Key puro
+};
+
+const subtitleData = [
+  { id: 1, start: 0.616, end: 1.850, text: "A Laurinha finalmente" },
+  { id: 2, start: 1.850, end: 3.418, text: "ouviu os meus conselhos" },
+  { id: 3, start: 3.418, end: 4.435, text: "e começou a usar" },
+  { id: 4, start: 4.435, end: 5.902, text: "os alinhadores." },
+  { id: 5, start: 5.902, end: 6.669, text: "Laurinha, agora eu quero" },
+  { id: 6, start: 6.669, end: 8.570, text: "você fale as suas experiências" },
+  { id: 7, start: 8.570, end: 9.237, text: "e principalmente" },
+  { id: 8, start: 9.237, end: 11.254, text: "as suas expectativas." },
+  { id: 9, start: 11.254, end: 12.055, text: "O mais importante," },
+  { id: 10, start: 12.055, end: 14.239, text: "está animada?" },
+  { id: 11, start: 14.239, end: 15.806, text: "Essa frase é a marca dela" },
+  { id: 12, start: 15.806, end: 17.157, text: "e eu estou animada, viu?" },
+  { id: 13, start: 17.157, end: 18.324, text: "Porque afinal de contas," },
+  { id: 14, start: 18.324, end: 18.924, text: "ela prometeu que" },
+  { id: 15, start: 18.924, end: 19.858, text: "vou ficar cinco anos" },
+  { id: 16, start: 19.858, end: 21.259, text: "mais jovem." },
+  { id: 17, start: 21.259, end: 22.843, text: "Brincadeiras a parte," },
+  { id: 18, start: 22.843, end: 24.377, text: "a doutora sempre me orientou" },
+  { id: 19, start: 24.377, end: 24.894, text: "a respeito" },
+  { id: 20, start: 24.894, end: 26.595, text: "da minha mordida cerrada" },
+  { id: 21, start: 26.595, end: 27.145, text: "e meu sorriso" },
+  { id: 22, start: 27.145, end: 27.945, text: "não me incomodava" },
+  { id: 23, start: 27.945, end: 29.429, text: "porque ele era bonito." },
+  { id: 24, start: 29.429, end: 31.663, text: "Mas o tempo passando" },
+  { id: 25, start: 31.663, end: 32.214, text: "e eu descobri" },
+  { id: 26, start: 32.214, end: 32.847, text: "que nunca é tarde" },
+  { id: 27, start: 32.847, end: 34.014, text: "para começar." },
+  { id: 28, start: 34.014, end: 34.815, text: "E com a facilidade" },
+  { id: 29, start: 34.815, end: 36.382, text: "dos alinhadores com sucesso," },
+  { id: 30, start: 36.382, end: 37.766, text: "o que eu vejo aqui na clínica," },
+  { id: 31, start: 37.766, end: 39.050, text: "nos próprios pacientes." },
+  { id: 32, start: 39.050, end: 40.217, text: "Pensei agora é minha vez." },
+  { id: 33, start: 40.217, end: 41.384, text: "Preciso botar essa arcada" },
+  { id: 34, start: 41.384, end: 42.718, text: "no local certinho" },
+  { id: 35, start: 42.718, end: 43.252, text: "para diminuir" },
+  { id: 36, start: 43.252, end: 44.036, text: "esse desconforto" },
+  { id: 37, start: 44.036, end: 46.670, text: "disfuncional da minha ATM." },
+  { id: 38, start: 46.670, end: 47.937, text: "Eu não sei muito bem o nome," },
+  { id: 39, start: 47.937, end: 48.437, text: "mas é isso." },
+  { id: 40, start: 48.437, end: 49.038, text: "Estou animada," },
+  { id: 41, start: 49.038, end: 50.305, text: "vamos aí para a jornada" },
+  { id: 42, start: 50.305, end: 51.505, text: "o tempo é reduzido," },
+  { id: 43, start: 51.505, end: 52.756, text: "então estou contando com tudo" },
+  { id: 44, start: 52.756, end: 54.173, text: "isso para ser um sucesso." }
+];
+
+export default function App() {
+  const [currentTime, setCurrentTime] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [activeSubtitle, setActiveSubtitle] = useState(null);
+  const [showGuides, setShowGuides] = useState(false);
+  
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
+
+  // Loop de alta performance (60fps)
+  useEffect(() => {
+    let lastTime = performance.now();
+    let frame;
+
+    const tick = (now) => {
+      if (isPlaying) {
+        const delta = (now - lastTime) / 1000;
+        setCurrentTime(prev => {
+          if (prev >= 54.2) {
+            setIsPlaying(false);
+            return 0;
+          }
+          return prev + delta;
+        });
+      }
+      lastTime = now;
+      frame = requestAnimationFrame(tick);
+    };
+
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [isPlaying]);
+
+  useEffect(() => {
+    const sub = subtitleData.find(s => currentTime >= s.start && currentTime <= s.end);
+    setActiveSubtitle(sub);
+  }, [currentTime]);
+
+  const exportVideo = () => {
+    setIsRecording(true);
+    setCurrentTime(0);
+    setIsPlaying(true);
+    
+    const canvas = document.getElementById('render-area');
+    const stream = canvas.captureStream(60);
+    mediaRecorderRef.current = new MediaRecorder(stream, { 
+      mimeType: 'video/webm;codecs=vp9',
+      videoBitsPerSecond: 8000000 
+    });
+    
+    mediaRecorderRef.current.ondataavailable = (e) => chunksRef.current.push(e.data);
+    mediaRecorderRef.current.onstop = () => {
+      const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ORY_Professional_Overlay.webm';
+      a.click();
+      chunksRef.current = [];
+      setIsRecording(false);
+    };
+    mediaRecorderRef.current.start();
+  };
+
+  return (
+    <div className="flex h-screen bg-[#0a0a0a] text-white font-sans overflow-hidden">
+      <style>{`
+        @keyframes subtleFade {
+          0% { opacity: 0; transform: translateY(8px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        .word-reveal {
+          display: inline-block;
+          animation: subtleFade 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+        .text-shadow-premium {
+          text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+      `}</style>
+
+      {/* Painel de Gestão */}
+      <div className="w-80 border-r border-white/10 bg-[#111] p-6 flex flex-col gap-8 z-20 shadow-2xl">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-[#0043FF] rounded-full flex items-center justify-center font-bold text-sm">O</div>
+            <h1 className="text-lg font-bold tracking-tight">ORY STUDIO</h1>
+          </div>
+          <p className="text-[10px] text-neutral-500 font-medium uppercase tracking-[0.2em]">Overlay Profissional</p>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex flex-col gap-2">
+            <button 
+              onClick={() => setIsPlaying(!isPlaying)}
+              className={`w-full py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${isPlaying ? 'bg-white text-black' : 'bg-[#0043FF] text-white'}`}
+            >
+              {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+              {isPlaying ? 'PAUSAR PREVIEW' : 'INICIAR PREVIEW'}
+            </button>
+            <button 
+              onClick={() => setCurrentTime(0)}
+              className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold flex items-center justify-center gap-2"
+            >
+              <RefreshCw size={14} /> RESETAR TEMPO
+            </button>
+          </div>
+
+          <div className="pt-4 border-t border-white/5 space-y-3">
+            <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">Visualização</p>
+            <button 
+              onClick={() => setShowGuides(!showGuides)}
+              className={`w-full py-3 px-4 rounded-xl border text-xs font-bold flex items-center justify-between transition-all ${showGuides ? 'border-[#0043FF] bg-[#0043FF]/10 text-[#0043FF]' : 'border-white/10 text-neutral-400'}`}
+            >
+              GUIAS DE ENQUADRAMENTO
+              {showGuides ? <Eye size={16} /> : <EyeOff size={16} />}
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-auto space-y-4">
+          <button 
+            onClick={isRecording ? () => mediaRecorderRef.current.stop() : exportVideo}
+            className={`w-full py-5 rounded-2xl font-black text-sm shadow-xl transition-all flex flex-col items-center justify-center gap-1 ${isRecording ? 'bg-red-600 animate-pulse' : 'bg-white text-black hover:scale-[1.02]'}`}
+          >
+            <div className="flex items-center gap-2">
+              <Download size={20} />
+              EXPORTAR OVERLAY
+            </div>
+            <span className="text-[9px] opacity-60">60 FPS • WEBM VP9</span>
+          </button>
+          
+          <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+            <p className="text-[10px] text-neutral-400 leading-relaxed italic">
+              "Focado em seriedade e autoridade para o perfil da clínica."
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Área de Preview do Canvas */}
+      <div className="flex-1 flex items-center justify-center p-12 bg-black relative">
+        <div 
+          id="render-area"
+          style={{ 
+            aspectRatio: '9/16', 
+            height: '92vh',
+            backgroundColor: ORY_COLORS.green,
+            position: 'relative',
+            overflow: 'hidden',
+            borderRadius: '16px',
+            boxShadow: '0 0 80px rgba(0,67,255,0.15)'
+          }}
+        >
+          {/* Logo Superior - Fiel ao PDF com Animação */}
+          <div className="absolute top-12 left-1/2 -translate-x-1/2 flex flex-col items-end">
+             <div className="relative">
+                {/* Círculo Azul Saltitante (Fiel à V1) */}
+                <div 
+                  className="absolute -top-4 right-1 w-12 h-12 rounded-full bg-[#0043FF] z-0 animate-bounce"
+                  style={{ animationDuration: '2.5s' }}
+                ></div>
+                
+                {/* Texto ORY Fiel à Marca */}
+                <span className="relative z-10 text-[64px] leading-none font-black text-[#303030] tracking-tighter shadow-sm">
+                  ORY
+                </span>
+             </div>
+             
+             {/* Texto clínica Fiel à Marca */}
+             <span className="text-[20px] leading-none text-[#0043FF] font-medium lowercase pr-1 mt-1">
+               clínica
+             </span>
+          </div>
+
+          {/* Guias (Não aparecem no export se você desmarcar) */}
+          {showGuides && (
+            <div className="absolute inset-0 pointer-events-none z-10 border border-white/20">
+              <div className="absolute inset-0 flex items-center justify-center">
+                 <div className="w-72 h-72 border border-white/10 rounded-full bg-white/5 backdrop-blur-[2px] flex items-center justify-center">
+                    <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Rosto aqui</span>
+                 </div>
+              </div>
+              <div className="absolute top-[80%] w-full h-[1px] bg-red-500/20"></div>
+            </div>
+          )}
+
+          {/* Legendas Profissionais (Lower Third) */}
+          <div className="absolute bottom-32 left-0 right-0 px-10 z-20">
+            {activeSubtitle && (
+              <div className="flex flex-wrap justify-center gap-x-2 gap-y-3">
+                {activeSubtitle.text.split(' ').map((word, idx) => {
+                  const isKeyword = word.length > 7 || word.includes('Laurinha') || word.includes('alinhadores') || word.includes('animada');
+                  return (
+                    <span 
+                      key={`${activeSubtitle.id}-${idx}`}
+                      className="word-reveal"
+                      style={{ animationDelay: `${idx * 0.06}s` }}
+                    >
+                      <span className={`
+                        text-4xl font-black uppercase tracking-tight text-shadow-premium transition-colors duration-500
+                        ${isKeyword ? 'text-[#0043FF]' : 'text-white'}
+                      `}>
+                        {word}
+                      </span>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Barra de Progresso Minimalista */}
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-black/10">
+            <div 
+              className="h-full bg-[#0043FF] transition-all duration-100 ease-linear" 
+              style={{ width: `${(currentTime / 54.2) * 100}%` }}
+            ></div>
+          </div>
+        </div>
+
+        {/* HUD Info */}
+        <div className="absolute top-8 right-8 flex items-center gap-4">
+           <div className="flex flex-col items-end">
+             <span className="text-[10px] font-bold text-neutral-500">TIMECODE</span>
+             <span className="text-xl font-mono text-white tracking-widest">{currentTime.toFixed(2)}s</span>
+           </div>
+           {isRecording && (
+             <div className="flex items-center gap-2 px-4 py-2 bg-red-600 rounded-full shadow-lg shadow-red-600/20">
+               <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
+               <span className="text-[10px] font-black uppercase">REC 60FPS</span>
+             </div>
+           )}
+        </div>
+      </div>
+    </div>
+  );
+}
