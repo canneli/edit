@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Download, RefreshCw, Eye, EyeOff } from 'lucide-react';
+import { Play, Pause, Video, RefreshCw, Eye, EyeOff, Upload, Image as ImageIcon } from 'lucide-react';
 
 const ORY_COLORS = {
   blue: '#0043FF',
@@ -28,7 +28,7 @@ const subtitleData = [
   { id: 17, start: 21.259, end: 22.843, text: "Brincadeiras a parte," },
   { id: 18, start: 22.843, end: 24.377, text: "a doutora sempre me orientou" },
   { id: 19, start: 24.377, end: 24.894, text: "a respeito" },
-  { id: 20, start: 24.894, end: 26.595, text: "da minha mordida cerrada" },
+  { id: 20, start: 24.894, end: 26.595, text: "da minha mordida ser errada" },
   { id: 21, start: 26.595, end: 27.145, text: "e meu sorriso" },
   { id: 22, start: 27.145, end: 27.945, text: "não me incomodava" },
   { id: 23, start: 27.945, end: 29.429, text: "porque ele era bonito." },
@@ -55,229 +55,434 @@ const subtitleData = [
   { id: 44, start: 52.756, end: 54.173, text: "isso para ser um sucesso." }
 ];
 
+const DRIVE_VIDEO_URL = "https://drive.google.com/uc?export=download&id=1mhzVx6_IVbl9UZ6JOfsOj3haLKM_ZQEK";
+
 export default function App() {
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
+  const [isRecordingMode, setIsRecordingMode] = useState(false);
   const [activeSubtitle, setActiveSubtitle] = useState(null);
   const [showGuides, setShowGuides] = useState(false);
+  const [bgMode, setBgMode] = useState('video');
+  const [localVideoUrl, setLocalVideoUrl] = useState('');
   
-  const mediaRecorderRef = useRef(null);
-  const chunksRef = useRef([]);
+  const videoRef = useRef(null);
+  const fileInputRef = useRef(null);
 
-  // Loop de alta performance (60fps)
+  const togglePlay = () => {
+    if (!isPlaying) {
+      if (bgMode === 'video' && videoRef.current) videoRef.current.play();
+      setIsPlaying(true);
+    } else {
+      if (bgMode === 'video' && videoRef.current) videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const resetTime = () => {
+    setCurrentTime(0);
+    if (videoRef.current) videoRef.current.currentTime = 0;
+  };
+
+  const handleVideoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setLocalVideoUrl(url);
+      setBgMode('video');
+      resetTime();
+    }
+  };
+
   useEffect(() => {
     let lastTime = performance.now();
-    let frame;
+    let frameId;
 
-    const tick = (now) => {
+    const loop = (now) => {
       if (isPlaying) {
-        const delta = (now - lastTime) / 1000;
-        setCurrentTime(prev => {
-          if (prev >= 54.2) {
+        if (bgMode === 'video' && videoRef.current) {
+          setCurrentTime(videoRef.current.currentTime);
+          
+          if (videoRef.current.ended || videoRef.current.currentTime >= 54.2) {
             setIsPlaying(false);
-            return 0;
+            if (isRecordingMode) setIsRecordingMode(false);
           }
-          return prev + delta;
-        });
+        } else {
+          const delta = (now - lastTime) / 1000;
+          setCurrentTime((prev) => {
+            const nextTime = prev + delta;
+            if (nextTime >= 54.2) {
+              setIsPlaying(false);
+              if (isRecordingMode) setIsRecordingMode(false);
+              return 0;
+            }
+            return nextTime;
+          });
+        }
       }
       lastTime = now;
-      frame = requestAnimationFrame(tick);
+      frameId = requestAnimationFrame(loop);
     };
 
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [isPlaying]);
+    frameId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(frameId);
+  }, [isPlaying, isRecordingMode, bgMode]);
 
   useEffect(() => {
     const sub = subtitleData.find(s => currentTime >= s.start && currentTime <= s.end);
     setActiveSubtitle(sub);
   }, [currentTime]);
 
-  const exportVideo = async () => {
-    alert("A gravação direta de ecrã está bloqueada pelas políticas de segurança deste ambiente. Por favor, reproduza a pré-visualização e utilize um software de gravação externo (como o OBS ou QuickTime) para capturar a animação.");
-    setIsRecording(false);
+  const startRecordingMode = () => {
+    setIsRecordingMode(true);
+    setShowGuides(false);
+    resetTime();
+    setBgMode('chroma'); 
+    setIsPlaying(true);
   };
 
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      mediaRecorderRef.current.stop();
-      setIsPlaying(false);
-    }
+  const stopRecordingMode = () => {
+    setIsRecordingMode(false);
+    setIsPlaying(false);
+    setBgMode('video'); 
+    if (videoRef.current) videoRef.current.pause();
   };
+
+  const getZoomLevel = (time) => {
+    if (time >= 4.4 && time <= 8.5) return 1.25;
+    if (time >= 15.8 && time <= 20.0) return 1.28;
+    if (time >= 24.8 && time <= 28.0) return 1.25;
+    if (time >= 40.2 && time <= 44.0) return 1.22;
+    if (time >= 50.3) return 1.25;
+    return 1.15; 
+  };
+
+  const currentZoom = getZoomLevel(currentTime);
 
   return (
-    <div className="flex h-screen bg-[#0a0a0a] text-white font-sans overflow-hidden">
+    <div className="flex w-full h-screen bg-[#0a0a0a] text-white font-sans overflow-hidden">
       <style>{`
-        @keyframes subtleFade {
-          0% { opacity: 0; transform: translateY(8px); }
-          100% { opacity: 1; transform: translateY(0); }
+        /* Animação Bouncy 60fps para Palavras */
+        @keyframes popIn {
+          0% { transform: scale(0.85) translateY(15px); opacity: 0; filter: blur(4px); }
+          60% { transform: scale(1.05) translateY(-2px); opacity: 1; filter: blur(0px); }
+          100% { transform: scale(1) translateY(0); opacity: 1; filter: blur(0px); }
         }
         .word-reveal {
           display: inline-block;
-          animation: subtleFade 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+          animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          opacity: 0; 
         }
-        .text-shadow-premium {
-          text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        
+        /* Efeitos Glow Reconstruídos para Máxima Legibilidade */
+        .text-glow-white {
+          text-shadow: 0 3px 8px rgba(0,0,0,0.95), 0 0 15px rgba(255,255,255,0.25);
+        }
+
+        .text-glow-blue {
+          color: #0043FF;
+          -webkit-text-stroke: 1px rgba(255,255,255,0.2);
+          animation: pulseGlowBlue 2s infinite alternate ease-in-out;
+        }
+
+        @keyframes pulseGlowBlue {
+          0% { 
+            text-shadow: 0 3px 6px rgba(0,0,0,0.95), 0 0 15px rgba(0,67,255,0.6), 0 0 25px rgba(0,67,255,0.4); 
+          }
+          100% { 
+            text-shadow: 0 3px 6px rgba(0,0,0,0.95), 0 0 20px rgba(0,67,255,1), 0 0 40px rgba(0,67,255,0.8), 0 0 60px rgba(0,67,255,0.5); 
+          }
+        }
+        
+        .text-shadow-logo {
+          text-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        }
+        
+        /* Animação do Logótipo */
+        @keyframes bounce-slow {
+          0%, 100% { transform: translateY(-5%); }
+          50% { transform: translateY(5%); }
+        }
+        .animate-bounce-slow {
+          animation: bounce-slow 2.5s infinite ease-in-out;
+        }
+
+        /* EFEITOS DA LEGENDA (FLUTUAÇÃO E ÓRBITA) */
+        @keyframes containerFloat {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-6px); }
+        }
+        .subtitle-container {
+          animation: containerFloat 4s ease-in-out infinite;
+        }
+
+        @keyframes orbit {
+          0% { transform: rotate(0deg) translateX(120px) rotate(0deg) scale(1); }
+          50% { transform: rotate(180deg) translateX(120px) rotate(-180deg) scale(1.5); }
+          100% { transform: rotate(360deg) translateX(120px) rotate(-360deg) scale(1); }
+        }
+        @keyframes orbit-reverse {
+          0% { transform: rotate(360deg) translateX(80px) rotate(-360deg) scale(0.8); }
+          50% { transform: rotate(180deg) translateX(80px) rotate(-180deg) scale(1.2); }
+          100% { transform: rotate(0deg) translateX(80px) rotate(0deg) scale(0.8); }
+        }
+        .orbiting-dot-1 {
+          position: absolute;
+          top: 50%; left: 50%;
+          margin-top: -3px; margin-left: -3px;
+          width: 6px; height: 6px;
+          background-color: #0043FF;
+          border-radius: 50%;
+          box-shadow: 0 0 12px 4px rgba(0,67,255,0.5);
+          animation: orbit 5s linear infinite;
+        }
+        .orbiting-dot-2 {
+          position: absolute;
+          top: 50%; left: 50%;
+          margin-top: -2px; margin-left: -2px;
+          width: 4px; height: 4px;
+          background-color: #F4F4F4;
+          border-radius: 50%;
+          box-shadow: 0 0 8px 2px rgba(255,255,255,0.4);
+          animation: orbit-reverse 4s linear infinite;
+        }
+        
+        /* FILTROS CINEMÁTICOS DE IMAGEM */
+        .color-graded-video {
+          filter: contrast(1.08) saturate(1.15) brightness(1.03) sepia(0.08) hue-rotate(-2deg);
+        }
+        
+        /* EFEITOS DE TELA MODERNOS (Overlay) */
+        .film-grain {
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+          opacity: 0.05;
+          mix-blend-mode: overlay;
+          pointer-events: none;
+        }
+        .vignette-effect {
+          background: radial-gradient(circle, rgba(0,0,0,0) 50%, rgba(0,0,0,0.5) 100%);
+          pointer-events: none;
+        }
+        @keyframes lightLeak {
+          0%, 100% { opacity: 0; transform: translateX(-100%) scale(1); }
+          50% { opacity: 0.15; transform: translateX(100%) scale(1.5); }
+        }
+        .light-flare {
+          background: radial-gradient(circle, rgba(0,67,255,0.4) 0%, rgba(0,0,0,0) 60%);
+          animation: lightLeak 12s infinite ease-in-out;
+          pointer-events: none;
         }
       `}</style>
 
-      {/* Painel de Gestão */}
-      <div className="w-80 border-r border-white/10 bg-[#111] p-6 flex flex-col gap-8 z-20 shadow-2xl shrink-0">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#0043FF] rounded-full flex items-center justify-center font-bold text-sm shadow-[0_0_15px_rgba(0,67,255,0.4)]">O</div>
-            <h1 className="text-lg font-bold tracking-tight">ORY STUDIO</h1>
+      {/* PAINEL LATERAL */}
+      {!isRecordingMode && (
+        <div className="w-80 h-full border-r border-white/10 bg-[#111] p-6 flex flex-col gap-6 z-20 shrink-0 overflow-y-auto shadow-2xl">
+          <div className="space-y-1 pb-4 border-b border-white/5">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-[#0043FF] rounded-full flex items-center justify-center font-bold text-sm shadow-[0_0_15px_rgba(0,67,255,0.4)]">O</div>
+              <h1 className="text-lg font-bold tracking-tight">ORY STUDIO</h1>
+            </div>
+            <p className="text-[10px] text-neutral-500 font-medium uppercase tracking-[0.2em]">Cinematic Edit</p>
           </div>
-          <p className="text-[10px] text-neutral-500 font-medium uppercase tracking-[0.2em]">Overlay Profissional</p>
-        </div>
 
-        <div className="space-y-4">
-          <div className="flex flex-col gap-2">
+          <div className="space-y-3">
             <button 
-              onClick={() => setIsPlaying(!isPlaying)}
-              className={`w-full py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${isPlaying ? 'bg-white text-black' : 'bg-[#0043FF] text-white hover:bg-blue-600'}`}
+              onClick={togglePlay}
+              className={`w-full py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${isPlaying ? 'bg-white text-black shadow-lg' : 'bg-[#0043FF] text-white hover:bg-blue-600 shadow-lg shadow-blue-500/20'}`}
             >
               {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
-              {isPlaying ? 'PAUSAR PREVIEW' : 'INICIAR PREVIEW'}
+              {isPlaying ? 'PAUSAR PREVIEW' : 'REPRODUZIR PREVIEW'}
             </button>
             <button 
-              onClick={() => setCurrentTime(0)}
+              onClick={resetTime}
               className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold flex items-center justify-center gap-2 transition-colors"
             >
               <RefreshCw size={14} /> RESETAR TEMPO
             </button>
           </div>
 
-          <div className="pt-4 border-t border-white/5 space-y-3">
-            <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">Visualização</p>
+          <div className="pt-2 space-y-3">
+            <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">Opções de Visualização</p>
+            
+            <div className="grid grid-cols-2 gap-2 bg-black/50 p-1 rounded-xl border border-white/5">
+              <button 
+                onClick={() => setBgMode('video')}
+                className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${bgMode === 'video' ? 'bg-white text-black' : 'text-neutral-500 hover:text-white'}`}
+              >
+                <Video size={14} /> VÍDEO
+              </button>
+              <button 
+                onClick={() => setBgMode('chroma')}
+                className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${bgMode === 'chroma' ? 'bg-[#00FF00] text-black' : 'text-neutral-500 hover:text-white'}`}
+              >
+                <ImageIcon size={14} /> CHROMA
+              </button>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
+              <input 
+                type="file" 
+                accept="video/*" 
+                className="hidden" 
+                ref={fileInputRef} 
+                onChange={handleVideoUpload}
+              />
+              <button 
+                onClick={() => fileInputRef.current.click()}
+                className="w-full py-3 px-4 mt-2 rounded-xl border border-white/10 text-xs font-bold flex items-center justify-between text-neutral-400 hover:bg-white/5 transition-all"
+              >
+                CARREGAR FICHEIRO LOCAL
+                <Upload size={16} />
+              </button>
+            </div>
+
             <button 
               onClick={() => setShowGuides(!showGuides)}
-              className={`w-full py-3 px-4 rounded-xl border text-xs font-bold flex items-center justify-between transition-all ${showGuides ? 'border-[#0043FF] bg-[#0043FF]/10 text-[#0043FF]' : 'border-white/10 text-neutral-400 hover:bg-white/5'}`}
+              className={`w-full mt-2 py-3 px-4 rounded-xl border text-xs font-bold flex items-center justify-between transition-all ${showGuides ? 'border-[#0043FF] bg-[#0043FF]/10 text-[#0043FF]' : 'border-white/10 text-neutral-400 hover:bg-white/5'}`}
             >
-              GUIAS DE ENQUADRAMENTO
+              MOSTRAR GUIAS DE ROSTO
               {showGuides ? <Eye size={16} /> : <EyeOff size={16} />}
             </button>
           </div>
-        </div>
 
-        <div className="mt-auto space-y-4">
-          <button 
-            onClick={isRecording ? stopRecording : exportVideo}
-            className={`w-full py-5 rounded-2xl font-black text-sm shadow-xl transition-all flex flex-col items-center justify-center gap-1 ${isRecording ? 'bg-red-600 animate-pulse text-white' : 'bg-white text-black hover:scale-[1.02]'}`}
-          >
-            <div className="flex items-center gap-2">
-              {isRecording ? <Pause size={20} /> : <Download size={20} />}
-              {isRecording ? 'PARAR GRAVAÇÃO' : 'EXPORTAR OVERLAY'}
-            </div>
-            <span className="text-[9px] opacity-60">{isRecording ? 'A GRAVAR A TELA...' : '60 FPS • SELECIONE O SEPARADOR'}</span>
-          </button>
-          
-          <div className="p-4 bg-white/5 rounded-xl border border-white/5">
-            <p className="text-[10px] text-neutral-400 leading-relaxed italic text-center">
-              "Focado em seriedade e autoridade para o perfil da clínica."
-            </p>
+          <div className="mt-auto space-y-4 pt-4">
+            <button 
+              onClick={startRecordingMode}
+              className="w-full py-4 rounded-2xl font-black text-sm shadow-xl transition-all flex flex-col items-center justify-center gap-1 bg-white text-black hover:scale-[1.02]"
+            >
+              <div className="flex items-center gap-2">
+                <Video size={18} />
+                GRAVAR TELA VERDE
+              </div>
+            </button>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Área de Preview do Canvas */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 bg-black relative">
+      {/* ÁREA DE RENDERIZAÇÃO PRINCIPAL */}
+      <div className="flex-1 h-full flex items-center justify-center relative p-8">
+        
+        {isRecordingMode && (
+          <button 
+            onClick={stopRecordingMode}
+            className="absolute top-6 left-6 z-50 px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-full shadow-lg hover:bg-red-700 flex items-center gap-2 transition-colors"
+          >
+            <Pause size={14} fill="currentColor" /> PARAR GRAVAÇÃO
+          </button>
+        )}
+
+        {!isRecordingMode && (
+          <div className="absolute top-6 right-6 flex items-center gap-4 z-50 bg-black/40 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10">
+             <div className="flex flex-col items-end">
+               <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-[0.2em]">Timecode</span>
+               <span className="text-xl font-mono text-white tracking-widest leading-none mt-1">{currentTime.toFixed(2)}s</span>
+             </div>
+          </div>
+        )}
+
         <div 
-          id="render-area"
+          className="relative overflow-hidden shadow-2xl transition-all duration-500 flex items-center justify-center"
           style={{ 
             aspectRatio: '9/16', 
             height: '100%',
-            maxHeight: '92vh',
-            backgroundColor: ORY_COLORS.green,
-            position: 'relative',
-            overflow: 'hidden',
-            borderRadius: '16px',
-            boxShadow: '0 0 80px rgba(0,67,255,0.15)'
+            maxHeight: isRecordingMode ? '95vh' : '85vh',
+            backgroundColor: bgMode === 'chroma' ? ORY_COLORS.green : '#000',
+            borderRadius: isRecordingMode ? '0px' : '20px',
+            border: isRecordingMode ? 'none' : '1px solid rgba(255,255,255,0.15)',
+            boxShadow: isRecordingMode ? 'none' : '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 80px rgba(0,67,255,0.1)'
           }}
         >
-          {/* Logo Superior - Fiel ao PDF com Animação do Círculo (Tamanho Ajustado) */}
-          <div className="absolute top-12 left-1/2 -translate-x-1/2 flex flex-col items-end pointer-events-none">
+          {bgMode === 'video' && (
+            <div className="absolute inset-0 w-full h-full bg-black z-0">
+              <video
+                ref={videoRef}
+                src={localVideoUrl || DRIVE_VIDEO_URL}
+                className="absolute inset-0 w-full h-full object-cover color-graded-video origin-center"
+                style={{ 
+                  transform: `scale(${currentZoom}) translateY(-6%)`,
+                  transition: 'transform 0.8s cubic-bezier(0.25, 1, 0.5, 1)' 
+                }}
+                playsInline
+                preload="auto"
+              />
+              <div className="absolute inset-0 vignette-effect"></div>
+              <div className="absolute inset-0 film-grain"></div>
+              <div className="absolute inset-0 light-flare w-full h-[200%]"></div>
+            </div>
+          )}
+
+          <div className="absolute top-12 left-1/2 -translate-x-1/2 flex flex-col items-end pointer-events-none z-10">
              <div className="relative">
-                {/* Círculo Azul Saltitante (Fiel à V1 - Reduzido) */}
                 <div 
-                  className="absolute -top-2 -right-2 w-10 h-10 rounded-full bg-[#0043FF] animate-bounce"
-                  style={{ animationDuration: '2.5s', zIndex: 0 }}
+                  className="absolute -top-1 -right-2 w-10 h-10 rounded-full bg-[#0043FF] animate-bounce-slow shadow-[0_0_20px_rgba(0,67,255,0.3)]"
+                  style={{ zIndex: 0 }}
                 ></div>
                 
-                {/* Texto ORY Fiel à Marca (Reduzido) */}
-                <span className="relative z-10 text-[48px] leading-none font-black text-[#303030] tracking-tighter">
+                <span className="relative z-10 text-[48px] leading-none font-black text-[#303030] tracking-tighter text-shadow-logo">
                   ORY
                 </span>
              </div>
              
-             {/* Texto clínica Fiel à Marca (Reduzido) */}
-             <span className="text-[16px] leading-none text-[#0043FF] font-medium lowercase pr-1 mt-1 tracking-wide">
+             <span className="text-[16px] leading-none text-[#0043FF] font-medium lowercase pr-1 mt-1 tracking-wide text-shadow-logo">
                clínica
              </span>
           </div>
 
-          {/* Guias (Não aparecem no export se você desmarcar) */}
-          {showGuides && (
+          {showGuides && !isRecordingMode && (
             <div className="absolute inset-0 pointer-events-none z-10 border border-white/20">
               <div className="absolute inset-0 flex items-center justify-center">
-                 <div className="w-72 h-72 border border-white/10 rounded-full bg-white/5 backdrop-blur-[2px] flex items-center justify-center">
-                    <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest text-center">
-                      Posicione<br/>o rosto aqui
+                 <div className="w-64 h-64 border-2 border-dashed border-white/30 rounded-full bg-white/5 flex items-center justify-center">
+                    <span className="text-[10px] text-white/60 font-bold uppercase tracking-widest text-center shadow-lg">
+                      Rosto do<br/>Paciente
                     </span>
                  </div>
               </div>
-              <div className="absolute top-[80%] w-full h-[1px] bg-red-500/20"></div>
+              <div className="absolute bottom-24 w-full h-[1px] bg-red-500/30"></div>
             </div>
           )}
 
-          {/* Legendas Profissionais (Lower Third) */}
-          <div className="absolute bottom-32 left-0 right-0 px-10 z-20 pointer-events-none">
+          {/* LEGENDAS (LOWER THIRD) - Elevadas e com Órbitas Suavizadas */}
+          <div className="absolute bottom-24 left-0 right-0 px-6 z-20 pointer-events-none flex flex-col items-center">
             {activeSubtitle && (
-              <div className="flex flex-wrap justify-center gap-x-2 gap-y-3">
-                {activeSubtitle.text.split(' ').map((word, idx) => {
-                  const isKeyword = word.length > 7 || word.includes('Laurinha') || word.includes('alinhadores') || word.includes('animada');
-                  return (
-                    <span 
-                      key={`${activeSubtitle.id}-${idx}`}
-                      className="word-reveal"
-                      style={{ animationDelay: `${idx * 0.06}s` }}
-                    >
-                      <span className={`
-                        text-4xl font-black uppercase tracking-tight text-shadow-premium transition-colors duration-500
-                        ${isKeyword ? 'text-[#0043FF]' : 'text-white'}
-                      `}>
-                        {word}
+              <div className="subtitle-container relative py-2 px-4">
+                
+                {/* Partículas em Órbita */}
+                <div className="absolute inset-0 pointer-events-none overflow-visible z-0 opacity-40">
+                   <div className="orbiting-dot-1"></div>
+                   <div className="orbiting-dot-2"></div>
+                </div>
+
+                {/* Texto */}
+                <div className="relative flex flex-wrap justify-center gap-x-1.5 gap-y-0 max-w-[95%] text-center z-10 leading-[1.1]">
+                  {activeSubtitle.text.split(' ').map((word, idx) => {
+                    const isKeyword = word.length > 7 || word.includes('Laurinha') || word.includes('alinhadores') || word.includes('animada');
+                    return (
+                      <span 
+                        key={`${activeSubtitle.id}-${idx}`}
+                        className="word-reveal"
+                        style={{ animationDelay: `${idx * 0.05}s` }}
+                      >
+                        <span className={`
+                          text-[26px] md:text-[30px] font-black uppercase tracking-tight transition-all duration-300
+                          ${isKeyword ? 'text-glow-blue' : 'text-[#F4F4F4] text-glow-white'}
+                        `}>
+                          {word}
+                        </span>
                       </span>
-                    </span>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
 
-          {/* Barra de Progresso Minimalista */}
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-black/10">
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-black/40 z-30">
             <div 
-              className="h-full bg-[#0043FF] transition-all duration-100 ease-linear" 
+              className="h-full bg-[#0043FF] shadow-[0_0_10px_rgba(0,67,255,0.8)]" 
               style={{ width: `${(currentTime / 54.2) * 100}%` }}
             ></div>
           </div>
-        </div>
 
-        {/* HUD Info (Fora da área verde) */}
-        <div className="absolute top-8 right-8 flex items-center gap-4">
-           <div className="flex flex-col items-end">
-             <span className="text-[10px] font-bold text-neutral-500">TIMECODE</span>
-             <span className="text-xl font-mono text-white tracking-widest">{currentTime.toFixed(2)}s</span>
-           </div>
-           {isRecording && (
-             <div className="flex items-center gap-2 px-4 py-2 bg-red-600 rounded-full shadow-lg shadow-red-600/20 animate-pulse">
-               <div className="w-2 h-2 bg-white rounded-full"></div>
-               <span className="text-[10px] font-black uppercase">REC 60FPS</span>
-             </div>
-           )}
         </div>
       </div>
     </div>
