@@ -95,52 +95,8 @@ export default function App() {
   }, [currentTime]);
 
   const exportVideo = async () => {
-    try {
-      // Pede permissão para gravar o ecrã (selecione este separador)
-      const stream = await navigator.mediaDevices.getDisplayMedia({ 
-        video: { preferCurrentTab: true },
-        audio: false 
-      });
-
-      setIsRecording(true);
-      setCurrentTime(0);
-      setIsPlaying(true);
-      setShowGuides(false); // Oculta as guias na gravação
-      
-      mediaRecorderRef.current = new MediaRecorder(stream, { 
-        mimeType: 'video/webm;codecs=vp9',
-        videoBitsPerSecond: 8000000 
-      });
-      
-      mediaRecorderRef.current.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
-      };
-
-      mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'ORY_Professional_Overlay.webm';
-        a.click();
-        chunksRef.current = [];
-        setIsRecording(false);
-      };
-
-      mediaRecorderRef.current.start();
-
-      // Parar automaticamente quando o vídeo acabar
-      setTimeout(() => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-          stream.getTracks().forEach(track => track.stop());
-          mediaRecorderRef.current.stop();
-        }
-      }, 55000); // 55 segundos de gravação
-      
-    } catch (err) {
-      console.error("Erro na gravação:", err);
-      alert("Acesso de gravação negado ou não suportado. Por favor, utilize um programa de gravação de ecrã (ex: OBS ou QuickTime) e grave a área verde enquanto reproduz.");
-    }
+    alert("A gravação direta de ecrã está bloqueada pelas políticas de segurança deste ambiente. Por favor, reproduza a pré-visualização e utilize um software de gravação externo (como o OBS ou QuickTime) para capturar a animação.");
+    setIsRecording(false);
   };
 
   const stopRecording = () => {
@@ -241,23 +197,23 @@ export default function App() {
             boxShadow: '0 0 80px rgba(0,67,255,0.15)'
           }}
         >
-          {/* Logo Superior - Fiel ao PDF com Animação do Círculo */}
+          {/* Logo Superior - Fiel ao PDF com Animação do Círculo (Tamanho Ajustado) */}
           <div className="absolute top-12 left-1/2 -translate-x-1/2 flex flex-col items-end pointer-events-none">
              <div className="relative">
-                {/* Círculo Azul Saltitante (Fiel à V1) */}
+                {/* Círculo Azul Saltitante (Fiel à V1 - Reduzido) */}
                 <div 
-                  className="absolute -top-3 -right-2 w-14 h-14 rounded-full bg-[#0043FF] animate-bounce"
+                  className="absolute -top-2 -right-2 w-10 h-10 rounded-full bg-[#0043FF] animate-bounce"
                   style={{ animationDuration: '2.5s', zIndex: 0 }}
                 ></div>
                 
-                {/* Texto ORY Fiel à Marca */}
-                <span className="relative z-10 text-[72px] leading-none font-black text-[#303030] tracking-tighter">
+                {/* Texto ORY Fiel à Marca (Reduzido) */}
+                <span className="relative z-10 text-[48px] leading-none font-black text-[#303030] tracking-tighter">
                   ORY
                 </span>
              </div>
              
-             {/* Texto clínica Fiel à Marca */}
-             <span className="text-[24px] leading-none text-[#0043FF] font-medium lowercase pr-1 mt-1 tracking-wide">
+             {/* Texto clínica Fiel à Marca (Reduzido) */}
+             <span className="text-[16px] leading-none text-[#0043FF] font-medium lowercase pr-1 mt-1 tracking-wide">
                clínica
              </span>
           </div>
