@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Download, RefreshCw, Layout, Eye, EyeOff } from 'lucide-react';
+import { Play, Pause, Download, RefreshCw, Eye, EyeOff } from 'lucide-react';
 
 const ORY_COLORS = {
   blue: '#0043FF',
@@ -94,30 +94,61 @@ export default function App() {
     setActiveSubtitle(sub);
   }, [currentTime]);
 
-  const exportVideo = () => {
-    setIsRecording(true);
-    setCurrentTime(0);
-    setIsPlaying(true);
-    
-    const canvas = document.getElementById('render-area');
-    const stream = canvas.captureStream(60);
-    mediaRecorderRef.current = new MediaRecorder(stream, { 
-      mimeType: 'video/webm;codecs=vp9',
-      videoBitsPerSecond: 8000000 
-    });
-    
-    mediaRecorderRef.current.ondataavailable = (e) => chunksRef.current.push(e.data);
-    mediaRecorderRef.current.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: 'video/webm' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'ORY_Professional_Overlay.webm';
-      a.click();
-      chunksRef.current = [];
-      setIsRecording(false);
-    };
-    mediaRecorderRef.current.start();
+  const exportVideo = async () => {
+    try {
+      // Pede permissão para gravar o ecrã (selecione este separador)
+      const stream = await navigator.mediaDevices.getDisplayMedia({ 
+        video: { preferCurrentTab: true },
+        audio: false 
+      });
+
+      setIsRecording(true);
+      setCurrentTime(0);
+      setIsPlaying(true);
+      setShowGuides(false); // Oculta as guias na gravação
+      
+      mediaRecorderRef.current = new MediaRecorder(stream, { 
+        mimeType: 'video/webm;codecs=vp9',
+        videoBitsPerSecond: 8000000 
+      });
+      
+      mediaRecorderRef.current.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mediaRecorderRef.current.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'ORY_Professional_Overlay.webm';
+        a.click();
+        chunksRef.current = [];
+        setIsRecording(false);
+      };
+
+      mediaRecorderRef.current.start();
+
+      // Parar automaticamente quando o vídeo acabar
+      setTimeout(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+          stream.getTracks().forEach(track => track.stop());
+          mediaRecorderRef.current.stop();
+        }
+      }, 55000); // 55 segundos de gravação
+      
+    } catch (err) {
+      console.error("Erro na gravação:", err);
+      alert("Acesso de gravação negado ou não suportado. Por favor, utilize um programa de gravação de ecrã (ex: OBS ou QuickTime) e grave a área verde enquanto reproduz.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      mediaRecorderRef.current.stop();
+      setIsPlaying(false);
+    }
   };
 
   return (
@@ -137,10 +168,10 @@ export default function App() {
       `}</style>
 
       {/* Painel de Gestão */}
-      <div className="w-80 border-r border-white/10 bg-[#111] p-6 flex flex-col gap-8 z-20 shadow-2xl">
+      <div className="w-80 border-r border-white/10 bg-[#111] p-6 flex flex-col gap-8 z-20 shadow-2xl shrink-0">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#0043FF] rounded-full flex items-center justify-center font-bold text-sm">O</div>
+            <div className="w-8 h-8 bg-[#0043FF] rounded-full flex items-center justify-center font-bold text-sm shadow-[0_0_15px_rgba(0,67,255,0.4)]">O</div>
             <h1 className="text-lg font-bold tracking-tight">ORY STUDIO</h1>
           </div>
           <p className="text-[10px] text-neutral-500 font-medium uppercase tracking-[0.2em]">Overlay Profissional</p>
@@ -150,14 +181,14 @@ export default function App() {
           <div className="flex flex-col gap-2">
             <button 
               onClick={() => setIsPlaying(!isPlaying)}
-              className={`w-full py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${isPlaying ? 'bg-white text-black' : 'bg-[#0043FF] text-white'}`}
+              className={`w-full py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${isPlaying ? 'bg-white text-black' : 'bg-[#0043FF] text-white hover:bg-blue-600'}`}
             >
               {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
               {isPlaying ? 'PAUSAR PREVIEW' : 'INICIAR PREVIEW'}
             </button>
             <button 
               onClick={() => setCurrentTime(0)}
-              className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold flex items-center justify-center gap-2 transition-colors"
             >
               <RefreshCw size={14} /> RESETAR TEMPO
             </button>
@@ -167,7 +198,7 @@ export default function App() {
             <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">Visualização</p>
             <button 
               onClick={() => setShowGuides(!showGuides)}
-              className={`w-full py-3 px-4 rounded-xl border text-xs font-bold flex items-center justify-between transition-all ${showGuides ? 'border-[#0043FF] bg-[#0043FF]/10 text-[#0043FF]' : 'border-white/10 text-neutral-400'}`}
+              className={`w-full py-3 px-4 rounded-xl border text-xs font-bold flex items-center justify-between transition-all ${showGuides ? 'border-[#0043FF] bg-[#0043FF]/10 text-[#0043FF]' : 'border-white/10 text-neutral-400 hover:bg-white/5'}`}
             >
               GUIAS DE ENQUADRAMENTO
               {showGuides ? <Eye size={16} /> : <EyeOff size={16} />}
@@ -177,18 +208,18 @@ export default function App() {
 
         <div className="mt-auto space-y-4">
           <button 
-            onClick={isRecording ? () => mediaRecorderRef.current.stop() : exportVideo}
-            className={`w-full py-5 rounded-2xl font-black text-sm shadow-xl transition-all flex flex-col items-center justify-center gap-1 ${isRecording ? 'bg-red-600 animate-pulse' : 'bg-white text-black hover:scale-[1.02]'}`}
+            onClick={isRecording ? stopRecording : exportVideo}
+            className={`w-full py-5 rounded-2xl font-black text-sm shadow-xl transition-all flex flex-col items-center justify-center gap-1 ${isRecording ? 'bg-red-600 animate-pulse text-white' : 'bg-white text-black hover:scale-[1.02]'}`}
           >
             <div className="flex items-center gap-2">
-              <Download size={20} />
-              EXPORTAR OVERLAY
+              {isRecording ? <Pause size={20} /> : <Download size={20} />}
+              {isRecording ? 'PARAR GRAVAÇÃO' : 'EXPORTAR OVERLAY'}
             </div>
-            <span className="text-[9px] opacity-60">60 FPS • WEBM VP9</span>
+            <span className="text-[9px] opacity-60">{isRecording ? 'A GRAVAR A TELA...' : '60 FPS • SELECIONE O SEPARADOR'}</span>
           </button>
           
           <div className="p-4 bg-white/5 rounded-xl border border-white/5">
-            <p className="text-[10px] text-neutral-400 leading-relaxed italic">
+            <p className="text-[10px] text-neutral-400 leading-relaxed italic text-center">
               "Focado em seriedade e autoridade para o perfil da clínica."
             </p>
           </div>
@@ -196,12 +227,13 @@ export default function App() {
       </div>
 
       {/* Área de Preview do Canvas */}
-      <div className="flex-1 flex items-center justify-center p-12 bg-black relative">
+      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 bg-black relative">
         <div 
           id="render-area"
           style={{ 
             aspectRatio: '9/16', 
-            height: '92vh',
+            height: '100%',
+            maxHeight: '92vh',
             backgroundColor: ORY_COLORS.green,
             position: 'relative',
             overflow: 'hidden',
@@ -209,23 +241,23 @@ export default function App() {
             boxShadow: '0 0 80px rgba(0,67,255,0.15)'
           }}
         >
-          {/* Logo Superior - Fiel ao PDF com Animação */}
-          <div className="absolute top-12 left-1/2 -translate-x-1/2 flex flex-col items-end">
+          {/* Logo Superior - Fiel ao PDF com Animação do Círculo */}
+          <div className="absolute top-12 left-1/2 -translate-x-1/2 flex flex-col items-end pointer-events-none">
              <div className="relative">
                 {/* Círculo Azul Saltitante (Fiel à V1) */}
                 <div 
-                  className="absolute -top-4 right-1 w-12 h-12 rounded-full bg-[#0043FF] z-0 animate-bounce"
-                  style={{ animationDuration: '2.5s' }}
+                  className="absolute -top-3 -right-2 w-14 h-14 rounded-full bg-[#0043FF] animate-bounce"
+                  style={{ animationDuration: '2.5s', zIndex: 0 }}
                 ></div>
                 
                 {/* Texto ORY Fiel à Marca */}
-                <span className="relative z-10 text-[64px] leading-none font-black text-[#303030] tracking-tighter shadow-sm">
+                <span className="relative z-10 text-[72px] leading-none font-black text-[#303030] tracking-tighter">
                   ORY
                 </span>
              </div>
              
              {/* Texto clínica Fiel à Marca */}
-             <span className="text-[20px] leading-none text-[#0043FF] font-medium lowercase pr-1 mt-1">
+             <span className="text-[24px] leading-none text-[#0043FF] font-medium lowercase pr-1 mt-1 tracking-wide">
                clínica
              </span>
           </div>
@@ -235,7 +267,9 @@ export default function App() {
             <div className="absolute inset-0 pointer-events-none z-10 border border-white/20">
               <div className="absolute inset-0 flex items-center justify-center">
                  <div className="w-72 h-72 border border-white/10 rounded-full bg-white/5 backdrop-blur-[2px] flex items-center justify-center">
-                    <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Rosto aqui</span>
+                    <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest text-center">
+                      Posicione<br/>o rosto aqui
+                    </span>
                  </div>
               </div>
               <div className="absolute top-[80%] w-full h-[1px] bg-red-500/20"></div>
@@ -243,7 +277,7 @@ export default function App() {
           )}
 
           {/* Legendas Profissionais (Lower Third) */}
-          <div className="absolute bottom-32 left-0 right-0 px-10 z-20">
+          <div className="absolute bottom-32 left-0 right-0 px-10 z-20 pointer-events-none">
             {activeSubtitle && (
               <div className="flex flex-wrap justify-center gap-x-2 gap-y-3">
                 {activeSubtitle.text.split(' ').map((word, idx) => {
@@ -276,15 +310,15 @@ export default function App() {
           </div>
         </div>
 
-        {/* HUD Info */}
+        {/* HUD Info (Fora da área verde) */}
         <div className="absolute top-8 right-8 flex items-center gap-4">
            <div className="flex flex-col items-end">
              <span className="text-[10px] font-bold text-neutral-500">TIMECODE</span>
              <span className="text-xl font-mono text-white tracking-widest">{currentTime.toFixed(2)}s</span>
            </div>
            {isRecording && (
-             <div className="flex items-center gap-2 px-4 py-2 bg-red-600 rounded-full shadow-lg shadow-red-600/20">
-               <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
+             <div className="flex items-center gap-2 px-4 py-2 bg-red-600 rounded-full shadow-lg shadow-red-600/20 animate-pulse">
+               <div className="w-2 h-2 bg-white rounded-full"></div>
                <span className="text-[10px] font-black uppercase">REC 60FPS</span>
              </div>
            )}
