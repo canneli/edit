@@ -35,6 +35,7 @@
         const Sparkles = (props) => <IconBase {...props}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></IconBase>;
         const Volume2 = (props) => <IconBase {...props}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></IconBase>;
         const VolumeX = (props) => <IconBase {...props}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></IconBase>;
+        const Scissors = (props) => <IconBase {...props}><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></IconBase>;
 
         // --- PALETA AC ESTÉTICA ---
         const AC_COLORS = { 
@@ -62,14 +63,12 @@
 
         const MAX_TIME = 23.0; // Duração total do Ad
 
-        // Palavras que vão brilhar e ter o efeito 3D agressivo
         const highlightKeywords = [
             'horas', 'sol', 'resultado?', 'Bronze', 'Jato', 'AC', 'Estética!', 
             'marquinha', 'perfeita', '30', 'minutos.', 'brilho', 'natural,', 
             'hidratada', 'imediato.', 'Agende', 'horário', 'poderosa!'
         ];
 
-        // Som de Whoosh Rápido para entrada das legendas
         const SFX_URL = "https://cdn.pixabay.com/download/audio/2022/03/10/audio_737e96b346.mp3?filename=pop-39222.mp3";
 
         function App() {
@@ -78,7 +77,12 @@
           const [isRecordingMode, setIsRecordingMode] = useState(false);
           const [activeSubtitle, setActiveSubtitle] = useState(null);
           const [bgMode, setBgMode] = useState('video');
-          const [localVideoUrl, setLocalVideoUrl] = useState('');
+          
+          // Novos Estados para Múltiplos Vídeos e Corte Automático
+          const [localVideos, setLocalVideos] = useState([]);
+          const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+          const [autoCutEnabled, setAutoCutEnabled] = useState(true);
+          
           const [localLogoUrl, setLocalLogoUrl] = useState('');
           const [countdown, setCountdown] = useState(null);
           const [sfxEnabled, setSfxEnabled] = useState(true);
@@ -89,11 +93,16 @@
           const logoInputRef = useRef(null);
           const timeRef = useRef(0);
           const activeSubRef = useRef(null);
+          const currentVideoIndexRef = useRef(0);
+          const autoCutEnabledRef = useRef(true);
           
           const previewProgressBarRef = useRef(null);
           const hudTimeRef = useRef(null);
 
-          // Efeito de Zoom Lento
+          // Sincronizar Refs de estado para o loop de animação
+          useEffect(() => { currentVideoIndexRef.current = currentVideoIndex; }, [currentVideoIndex]);
+          useEffect(() => { autoCutEnabledRef.current = autoCutEnabled; }, [autoCutEnabled]);
+
           const getZoomLevel = (time) => {
             return 1.1 + (time / MAX_TIME) * 0.15; 
           };
@@ -106,6 +115,13 @@
                   }
               }
           };
+
+          // Quando o vídeo atual muda na galeria, forçamos o novo a tocar
+          useEffect(() => {
+             if (isPlaying && videoRef.current) {
+                 safePlayVideo();
+             }
+          }, [currentVideoIndex]);
 
           const togglePlay = () => {
             if (!isPlaying) {
@@ -126,14 +142,20 @@
             if (hudTimeRef.current) hudTimeRef.current.innerText = '0.00s';
             setActiveSubtitle(null);
             activeSubRef.current = null;
+            if (autoCutEnabled) setCurrentVideoIndex(0);
           };
 
+          // UPLOAD MÚLTIPLO DE VÍDEOS
           const handleVideoUpload = (e) => {
-            const file = e.target.files[0];
-            if (file) {
-              const url = URL.createObjectURL(file);
-              setLocalVideoUrl(url);
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+              const urls = files.map(file => URL.createObjectURL(file));
+              // Adiciona os novos vídeos à lista (ou substitui se preferir, aqui vamos substituir para manter limpo)
+              setLocalVideos(urls);
+              setCurrentVideoIndex(0);
               setBgMode('video');
+              // Ativa o corte automático se enviar mais que 1
+              setAutoCutEnabled(files.length > 1);
               resetTime();
             }
           };
@@ -154,16 +176,27 @@
             const loop = (now) => {
               if (isPlaying && countdown === null) {
                 let time = timeRef.current;
-                if (bgMode === 'video' && videoRef.current && videoRef.current.readyState >= 2 && !videoRef.current.paused && videoRef.current.networkState !== 3) {
-                  time = videoRef.current.currentTime;
-                  if (videoRef.current.ended || time >= MAX_TIME) setIsPlaying(false);
-                } else {
-                  const delta = (now - lastTime) / 1000;
-                  time = timeRef.current + delta;
-                  if (time >= MAX_TIME) { setIsPlaying(false); time = 0; }
+                
+                // Atualizar o tempo independentemente do vídeo
+                const delta = (now - lastTime) / 1000;
+                time = timeRef.current + delta;
+                
+                if (time >= MAX_TIME) { 
+                    setIsPlaying(false); 
+                    time = 0; 
                 }
                 
                 timeRef.current = time;
+
+                // Lógica de Corte Automático (Muda o vídeo conforme avança)
+                if (localVideos.length > 1 && autoCutEnabledRef.current) {
+                    const timePerVideo = MAX_TIME / localVideos.length;
+                    const expectedIndex = Math.min(Math.floor(time / timePerVideo), localVideos.length - 1);
+                    if (expectedIndex !== currentVideoIndexRef.current) {
+                        currentVideoIndexRef.current = expectedIndex;
+                        setCurrentVideoIndex(expectedIndex);
+                    }
+                }
 
                 if (previewProgressBarRef.current) {
                     previewProgressBarRef.current.style.width = `${(time / MAX_TIME) * 100}%`;
@@ -182,10 +215,9 @@
                     activeSubRef.current = sub;
                     setActiveSubtitle(sub);
                     
-                    // Tocar som se ativado e se houver legenda nova
                     if (sfxEnabled && sfxRef.current && sub !== null) {
                         sfxRef.current.currentTime = 0;
-                        sfxRef.current.volume = 0.6; // Volume equilibrado
+                        sfxRef.current.volume = 0.6;
                         sfxRef.current.play().catch(e => console.log("O áudio requer interação inicial do utilizador."));
                     }
                 }
@@ -196,7 +228,7 @@
 
             frameId = requestAnimationFrame(loop);
             return () => cancelAnimationFrame(frameId);
-          }, [isPlaying, countdown, bgMode, sfxEnabled]);
+          }, [isPlaying, countdown, bgMode, sfxEnabled, localVideos.length]);
 
           // LÓGICA PARA TELA LIMPA & GRAVAÇÃO MANUAL NO OBS
           const startRecordingMode = () => {
@@ -224,30 +256,28 @@
             if (videoRef.current) videoRef.current.pause();
           };
 
+          const currentLocalVideoUrl = localVideos.length > 0 ? localVideos[currentVideoIndex] : '';
+
           return (
             <div className="flex w-full h-screen bg-[#050505] text-white font-sans overflow-hidden">
               
-              {/* Elemento de Áudio para SFX */}
               <audio ref={sfxRef} src={SFX_URL} preload="auto" crossOrigin="anonymous"></audio>
 
-              {/* ESTILOS ÚNICOS AD IMPACTANTE (LETRAS INDIVIDUAIS) */}
+              {/* ESTILOS ÚNICOS AD IMPACTANTE */}
               <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,300;0,400;0,600&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
 
-                /* Animação de Letra Individual (Bounce super dinâmico) */
                 @keyframes letterSlam { 
                   0% { transform: scale(0) translateY(60px) rotate(-25deg); opacity: 0; filter: blur(8px); } 
                   50% { transform: scale(1.3) translateY(-15px) rotate(10deg); opacity: 1; filter: blur(0px); } 
                   100% { transform: scale(1) translateY(0) rotate(-4deg); opacity: 1; filter: blur(0px); } 
                 }
 
-                /* Flutuação contínua e orgânica */
                 @keyframes letterFloat {
                   0% { transform: translateY(0px) rotate(-4deg); }
                   100% { transform: translateY(-6px) rotate(0deg); }
                 }
 
-                /* Animação Suave para Palavras Normais (Fundo Preto) */
                 @keyframes smoothPop {
                   0% { transform: scale(0.8) translateY(10px); opacity: 0; }
                   100% { transform: scale(1) translateY(0); opacity: 1; }
@@ -259,17 +289,14 @@
                   opacity: 0; 
                 }
 
-                /* A classe mágica para cada letra dourada */
                 .letter-anim {
                   display: inline-block;
                   opacity: 0;
-                  /* Dupla animação: Entra forte, depois fica a flutuar */
                   animation: 
                     letterSlam 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
                     letterFloat 2s ease-in-out infinite alternate;
                 }
 
-                /* Estilo Palavras Normais (Caixa IG/TikTok) */
                 .text-ig-pill {
                   font-family: 'Jost', sans-serif;
                   font-weight: 300;
@@ -283,13 +310,11 @@
                   border: 1px solid rgba(255,255,255,0.1);
                 }
 
-                /* Brilho Animado sobre o Dourado */
                 @keyframes goldShine {
                   0% { background-position: 0% 50%; }
                   100% { background-position: 200% 50%; }
                 }
 
-                /* Estilo Letras Destaque (Glow Dourado Elegante para fonte Light) */
                 .text-3d-gold { 
                   font-family: 'Jost', sans-serif;
                   font-weight: 300;
@@ -300,7 +325,6 @@
                   -webkit-background-clip: text;
                   -webkit-text-fill-color: transparent;
                   -webkit-text-stroke: 0.5px rgba(255,255,255,0.3);
-                  /* Sombra suave e elegante para manter a legibilidade da fonte fina */
                   filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.9)) 
                           drop-shadow(0px 0px 15px rgba(212,175,55,0.6));
                   transform-origin: bottom center;
@@ -312,12 +336,10 @@
                   animation-fill-mode: forwards, forwards, forwards;
                 }
 
-                /* COLOR GRADING ESTÉTICA */
                 .color-graded-video-ac { 
                   filter: sepia(0.35) saturate(1.4) contrast(1.15) brightness(1.05) hue-rotate(-5deg); 
                 }
 
-                /* Partículas e Flares */
                 @keyframes floatUp {
                   0% { transform: translateY(0) rotate(0deg); opacity: 0; }
                   50% { opacity: 0.8; }
@@ -340,11 +362,24 @@
                   animation: sunFlare 8s infinite alternate ease-in-out; 
                   pointer-events: none; 
                 }
+
+                /* Scrollbar Customizada para a Galeria */
+                .custom-scrollbar::-webkit-scrollbar {
+                  height: 6px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                  background: rgba(255,255,255,0.05);
+                  border-radius: 10px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                  background: rgba(212,175,55,0.5);
+                  border-radius: 10px;
+                }
               `}</style>
 
               {/* PAINEL LATERAL DE CONTROLO */}
               {!isRecordingMode && (
-                <div className="w-80 h-full border-r border-[#D4AF37]/20 bg-[#0a0a0a] p-6 flex flex-col gap-6 z-20 shadow-2xl shrink-0 overflow-y-auto">
+                <div className="w-80 h-full border-r border-[#D4AF37]/20 bg-[#0a0a0a] p-6 flex flex-col gap-6 z-20 shadow-2xl shrink-0 overflow-y-auto custom-scrollbar">
                   <div className="space-y-1 pb-4 border-b border-white/5">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gradient-to-br from-[#D4AF37] to-[#CD7F32] rounded-full flex items-center justify-center font-bold text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]">
@@ -401,16 +436,52 @@
                     </div>
 
                     <div className="mt-4 pt-2 space-y-2">
-                      <input type="file" accept="video/*" className="hidden" ref={fileInputRef} onChange={handleVideoUpload} />
+                      <input type="file" accept="video/*" multiple className="hidden" ref={fileInputRef} onChange={handleVideoUpload} />
                       <button 
                         onClick={() => fileInputRef.current.click()}
-                        className={`w-full py-4 px-4 rounded-xl border text-xs font-bold flex items-center justify-between transition-all ${localVideoUrl ? 'border-[#D4AF37]/50 bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-white/10 text-neutral-400 hover:bg-white/5'}`}
+                        className={`w-full py-3 px-4 rounded-xl border text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all ${localVideos.length > 0 ? 'border-[#D4AF37]/50 bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-white/10 text-neutral-400 hover:bg-white/5'}`}
                       >
-                        {localVideoUrl ? 'VÍDEO CARREGADO ✓' : '1. CARREGAR VÍDEO'}
-                        <Video size={16} />
+                        <div className="flex items-center gap-2">
+                          {localVideos.length > 0 ? `${localVideos.length} VÍDEOS CARREGADOS ✓` : '1. CARREGAR VÍDEOS'}
+                          <Video size={16} />
+                        </div>
+                        {localVideos.length === 0 && <span className="text-[9px] font-normal opacity-70">Pode selecionar vários vídeos de uma vez</span>}
                       </button>
 
-                      {/* UPLOAD DE LOGO */}
+                      {/* GALERIA DE VÍDEOS & CORTE AUTOMÁTICO */}
+                      {localVideos.length > 0 && (
+                        <div className="bg-black/30 border border-white/5 rounded-xl p-3 mt-2">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Cenas</span>
+                            {localVideos.length > 1 && (
+                              <button 
+                                onClick={() => setAutoCutEnabled(!autoCutEnabled)}
+                                className={`text-[9px] px-2 py-1 rounded border flex items-center gap-1 transition-colors ${autoCutEnabled ? 'bg-[#D4AF37]/20 border-[#D4AF37]/50 text-[#D4AF37]' : 'border-white/20 text-neutral-500'}`}
+                                title="Mudar vídeo automaticamente com o tempo"
+                              >
+                                <Scissors size={10} /> CORTE AUTO
+                              </button>
+                            )}
+                          </div>
+                          
+                          <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar snap-x">
+                            {localVideos.map((url, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => { setCurrentVideoIndex(idx); setAutoCutEnabled(false); }}
+                                className={`relative shrink-0 w-16 h-20 rounded-lg overflow-hidden border-2 snap-center transition-all duration-300 ${currentVideoIndex === idx ? 'border-[#D4AF37] scale-105 shadow-[0_0_10px_rgba(212,175,55,0.5)]' : 'border-transparent opacity-50 hover:opacity-100'}`}
+                                title={`Cena ${idx + 1}`}
+                              >
+                                <video src={url} className="w-full h-full object-cover pointer-events-none" muted preload="metadata" />
+                                <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black to-transparent text-[9px] font-bold text-white text-center pt-4 pb-1">
+                                  #{idx + 1}
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       <input type="file" accept="image/*" className="hidden" ref={logoInputRef} onChange={handleLogoUpload} />
                       <button 
                         onClick={() => logoInputRef.current.click()}
@@ -423,11 +494,6 @@
                   </div>
 
                   <div className="mt-auto space-y-4 pt-4 border-t border-white/5">
-                    <div className="p-3 bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-xl mb-2">
-                       <p className="text-xs text-[#D4AF37] leading-relaxed text-center font-medium">
-                         Para exportar com máxima qualidade, use a função abaixo para limpar a tela e grave com o seu <b>OBS Studio</b>.
-                       </p>
-                    </div>
                     <button 
                       onClick={startRecordingMode}
                       className={`w-full py-4 rounded-2xl font-black text-sm shadow-xl transition-all flex flex-col items-center justify-center gap-1 bg-white text-black hover:scale-[1.02]`}
@@ -441,7 +507,7 @@
                 </div>
               )}
 
-              {/* ÁREA DE RENDERIZAÇÃO DOM (O preview exato que será gravado) */}
+              {/* ÁREA DE RENDERIZAÇÃO DOM */}
               <div className="flex-1 h-full flex items-center justify-center relative p-0 sm:p-8 bg-[#020202]">
                 
                 {countdown !== null && countdown > 0 && (
@@ -486,20 +552,21 @@
                 >
                   {bgMode === 'video' && (
                     <div className="absolute inset-0 w-full h-full bg-black z-0">
-                      {localVideoUrl ? (
+                      {currentLocalVideoUrl ? (
                         <video
                           ref={videoRef}
-                          src={localVideoUrl}
+                          src={currentLocalVideoUrl}
                           crossOrigin="anonymous"
                           className="absolute inset-0 w-full h-full object-cover color-graded-video-ac origin-center"
                           style={{ transform: `scale(1.1) translateY(-2%)`, transition: 'transform 0.1s linear' }}
                           playsInline
                           preload="auto"
+                          muted
                         />
                       ) : (
                          <div className="absolute inset-0 flex flex-col items-center justify-center text-[#D4AF37]/40 bg-neutral-900">
                            <ImageIcon size={48} className="mb-4 opacity-50" />
-                           <p className="text-sm font-bold uppercase tracking-widest">Carregue o vídeo de fundo</p>
+                           <p className="text-sm font-bold uppercase tracking-widest text-center px-4">Selecione vários vídeos<br/>na barra lateral</p>
                          </div>
                       )}
                       
@@ -509,12 +576,11 @@
                     </div>
                   )}
 
-                  {/* LOGOTIPO NO TOPO (Customizável) */}
+                  {/* LOGOTIPO NO TOPO */}
                   <div className="absolute top-10 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none z-10 w-[80%] max-w-[200px]">
                      {localLogoUrl ? (
                        <img src={localLogoUrl} alt="Logo Cliente" className="max-h-[100px] w-auto object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]" />
                      ) : (
-                       // Fallback Padrão AC Estética
                        <div className="flex flex-col items-center">
                          <span className="text-[42px] leading-none font-black text-white tracking-widest drop-shadow-xl" style={{fontFamily: "'Playfair Display', serif"}}>AC</span>
                          <div className="flex items-center gap-2 mt-1">
@@ -526,12 +592,12 @@
                      )}
                   </div>
 
-                  {/* LEGENDAS DINÂMICAS (ALTO IMPACTO - LETRA A LETRA) */}
+                  {/* LEGENDAS DINÂMICAS */}
                   <div className="absolute bottom-28 left-0 right-0 px-4 z-20 pointer-events-none flex flex-col items-center">
                     {activeSubtitle && (
                       <div className="relative w-full flex justify-center pb-4">
                         
-                        {/* Efeito de Pó Dourado (Apenas para dar ambiência) */}
+                        {/* Pó Dourado */}
                         <div className="absolute inset-0 overflow-visible pointer-events-none opacity-60">
                            <div className="gold-dust w-1.5 h-1.5 left-[30%] top-[20%]" style={{animationDelay: '0.1s'}}></div>
                            <div className="gold-dust w-2 h-2 left-[70%] top-[40%]" style={{animationDelay: '0.5s'}}></div>
@@ -546,21 +612,18 @@
                             return (
                               <span key={`${activeSubtitle.id}-word-${wordIdx}`} className="whitespace-nowrap">
                                 {isKeyword ? (
-                                  /* Animação de Palavra-Chave Letra a Letra */
                                   word.split('').map((char, charIdx) => (
                                     <span 
                                       key={`char-${charIdx}`}
                                       className="letter-anim text-[58px] md:text-[72px] text-3d-gold font-light"
                                       style={{ 
                                         animationDelay: `${(wordIdx * 0.05) + (charIdx * 0.03)}s, ${(wordIdx * 0.05) + (charIdx * 0.03) + 0.5}s, 0s`,
-                                        /* Aplicamos o delay do Slam, o delay do float que começa após o Slam, e o shine não tem delay */
                                       }}
                                     >
                                       {char}
                                     </span>
                                   ))
                                 ) : (
-                                  /* Animação Normal da Pílula */
                                   <span 
                                     className="word-reveal-smooth"
                                     style={{ animationDelay: `${wordIdx * 0.08}s` }}
