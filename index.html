@@ -36,6 +36,7 @@
         const Volume2 = (props) => <IconBase {...props}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></IconBase>;
         const VolumeX = (props) => <IconBase {...props}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></IconBase>;
         const Scissors = (props) => <IconBase {...props}><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></IconBase>;
+        const Music = (props) => <IconBase {...props}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></IconBase>;
 
         // --- PALETA AC ESTÉTICA ---
         const AC_COLORS = { 
@@ -69,7 +70,9 @@
             'hidratada', 'imediato.', 'Agende', 'horário', 'poderosa!'
         ];
 
-        const SFX_URL = "https://cdn.pixabay.com/download/audio/2022/03/10/audio_737e96b346.mp3?filename=pop-39222.mp3";
+        // MÚSICA E EFEITOS SONOROS (SFX)
+        const MUSIC_URL = "https://cdn.pixabay.com/download/audio/2021/11/24/audio_3c316a8d61.mp3?filename=fashion-chill-beat-10515.mp3"; 
+        const SFX_URL = "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3?filename=whoosh-6316.mp3";
 
         function App() {
           const [currentTime, setCurrentTime] = useState(0);
@@ -85,12 +88,17 @@
           
           const [localLogoUrl, setLocalLogoUrl] = useState('');
           const [countdown, setCountdown] = useState(null);
+          
+          // Controlos de Áudio
           const [sfxEnabled, setSfxEnabled] = useState(true);
+          const [musicEnabled, setMusicEnabled] = useState(true);
           
           const videoRef = useRef(null);
           const sfxRef = useRef(null);
+          const bgmRef = useRef(null);
           const fileInputRef = useRef(null);
           const logoInputRef = useRef(null);
+          
           const timeRef = useRef(0);
           const activeSubRef = useRef(null);
           const currentVideoIndexRef = useRef(0);
@@ -107,39 +115,47 @@
             return 1.1 + (time / MAX_TIME) * 0.15; 
           };
 
-          const safePlayVideo = () => {
-              if (videoRef.current && videoRef.current.networkState !== 3) {
-                  const playPromise = videoRef.current.play();
-                  if (playPromise !== undefined) {
-                      playPromise.catch(error => console.warn("A reprodução do vídeo foi bloqueada:", error));
-                  }
+          const playAllMedia = () => {
+              if (bgMode === 'video' && videoRef.current && videoRef.current.networkState !== 3) {
+                  videoRef.current.play().catch(e => console.warn("A reprodução do vídeo foi bloqueada:", e));
+              }
+              if (musicEnabled && bgmRef.current) {
+                  bgmRef.current.volume = 0.25; // Música ambiente baixa para destacar os efeitos e a voz
+                  bgmRef.current.play().catch(e => console.warn("Música bloqueada pelo navegador:", e));
               }
           };
 
-          // Quando o vídeo atual muda na galeria, forçamos o novo a tocar
+          const pauseAllMedia = () => {
+              if (videoRef.current) videoRef.current.pause();
+              if (bgmRef.current) bgmRef.current.pause();
+          };
+
+          // Quando o vídeo atual muda na galeria, forçamos o novo a tocar a partir do início
           useEffect(() => {
-             if (isPlaying && videoRef.current) {
-                 safePlayVideo();
+             if (isPlaying) {
+                 if (videoRef.current) videoRef.current.currentTime = 0;
+                 playAllMedia();
              }
           }, [currentVideoIndex]);
 
           const togglePlay = () => {
             if (!isPlaying) {
-              if (bgMode === 'video') safePlayVideo();
+              playAllMedia();
               setIsPlaying(true);
             } else {
-              if (bgMode === 'video' && videoRef.current) videoRef.current.pause();
+              pauseAllMedia();
               setIsPlaying(false);
             }
           };
 
           const resetTime = () => {
             timeRef.current = 0;
-            if (videoRef.current && videoRef.current.readyState > 0) {
-                videoRef.current.currentTime = 0;
-            }
+            if (videoRef.current && videoRef.current.readyState > 0) videoRef.current.currentTime = 0;
+            if (bgmRef.current) bgmRef.current.currentTime = 0;
+            
             if (previewProgressBarRef.current) previewProgressBarRef.current.style.width = '0%';
             if (hudTimeRef.current) hudTimeRef.current.innerText = '0.00s';
+            
             setActiveSubtitle(null);
             activeSubRef.current = null;
             if (autoCutEnabled) setCurrentVideoIndex(0);
@@ -150,11 +166,9 @@
             const files = Array.from(e.target.files);
             if (files.length > 0) {
               const urls = files.map(file => URL.createObjectURL(file));
-              // Adiciona os novos vídeos à lista (ou substitui se preferir, aqui vamos substituir para manter limpo)
               setLocalVideos(urls);
               setCurrentVideoIndex(0);
               setBgMode('video');
-              // Ativa o corte automático se enviar mais que 1
               setAutoCutEnabled(files.length > 1);
               resetTime();
             }
@@ -177,18 +191,19 @@
               if (isPlaying && countdown === null) {
                 let time = timeRef.current;
                 
-                // Atualizar o tempo independentemente do vídeo
+                // Atualizar o tempo independentemente do vídeo principal
                 const delta = (now - lastTime) / 1000;
                 time = timeRef.current + delta;
                 
                 if (time >= MAX_TIME) { 
                     setIsPlaying(false); 
-                    time = 0; 
+                    time = 0;
+                    pauseAllMedia();
                 }
                 
                 timeRef.current = time;
 
-                // Lógica de Corte Automático (Muda o vídeo conforme avança)
+                // Lógica de Corte Automático (Muda o vídeo conforme avança o tempo geral)
                 if (localVideos.length > 1 && autoCutEnabledRef.current) {
                     const timePerVideo = MAX_TIME / localVideos.length;
                     const expectedIndex = Math.min(Math.floor(time / timePerVideo), localVideos.length - 1);
@@ -215,10 +230,11 @@
                     activeSubRef.current = sub;
                     setActiveSubtitle(sub);
                     
+                    // Toca o efeito "Whoosh" sempre que uma nova legenda aparece
                     if (sfxEnabled && sfxRef.current && sub !== null) {
                         sfxRef.current.currentTime = 0;
-                        sfxRef.current.volume = 0.6;
-                        sfxRef.current.play().catch(e => console.log("O áudio requer interação inicial do utilizador."));
+                        sfxRef.current.volume = 0.8; // Volume do Whoosh forte e impactante
+                        sfxRef.current.play().catch(e => console.log("O áudio requer interação inicial."));
                     }
                 }
               }
@@ -228,7 +244,7 @@
 
             frameId = requestAnimationFrame(loop);
             return () => cancelAnimationFrame(frameId);
-          }, [isPlaying, countdown, bgMode, sfxEnabled, localVideos.length]);
+          }, [isPlaying, countdown, bgMode, sfxEnabled, musicEnabled, localVideos.length]);
 
           // LÓGICA PARA TELA LIMPA & GRAVAÇÃO MANUAL NO OBS
           const startRecordingMode = () => {
@@ -245,7 +261,7 @@
             } else if (countdown === 0) {
               setCountdown(null);
               setIsPlaying(true);
-              safePlayVideo();
+              playAllMedia();
             }
           }, [countdown]);
 
@@ -253,7 +269,7 @@
             setIsRecordingMode(false);
             setIsPlaying(false);
             setCountdown(null);
-            if (videoRef.current) videoRef.current.pause();
+            pauseAllMedia();
           };
 
           const currentLocalVideoUrl = localVideos.length > 0 ? localVideos[currentVideoIndex] : '';
@@ -261,6 +277,8 @@
           return (
             <div className="flex w-full h-screen bg-[#050505] text-white font-sans overflow-hidden">
               
+              {/* Elementos de Áudio Ocultos */}
+              <audio ref={bgmRef} src={MUSIC_URL} preload="auto" loop crossOrigin="anonymous"></audio>
               <audio ref={sfxRef} src={SFX_URL} preload="auto" crossOrigin="anonymous"></audio>
 
               {/* ESTILOS ÚNICOS AD IMPACTANTE */}
@@ -363,7 +381,7 @@
                   pointer-events: none; 
                 }
 
-                /* Scrollbar Customizada para a Galeria */
+                /* Scrollbar Customizada */
                 .custom-scrollbar::-webkit-scrollbar {
                   height: 6px;
                 }
@@ -410,14 +428,23 @@
 
                   <div className="pt-2 space-y-3">
                     <div className="flex items-center justify-between">
-                       <p className="text-[10px] text-[#D4AF37] font-bold uppercase tracking-widest">Opções de Mídia</p>
-                       <button 
-                         onClick={() => setSfxEnabled(!sfxEnabled)} 
-                         className={`p-1.5 rounded-lg border transition-colors ${sfxEnabled ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-white/10 text-neutral-500'}`}
-                         title="Efeitos Sonoros (Whoosh)"
-                       >
-                         {sfxEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
-                       </button>
+                       <p className="text-[10px] text-[#D4AF37] font-bold uppercase tracking-widest">Áudio e Mídia</p>
+                       <div className="flex items-center gap-1">
+                           <button 
+                             onClick={() => setMusicEnabled(!musicEnabled)} 
+                             className={`p-1.5 rounded-lg border transition-colors ${musicEnabled ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-white/10 text-neutral-500'}`}
+                             title="Música de Fundo"
+                           >
+                             {musicEnabled ? <Music size={14} /> : <VolumeX size={14} />}
+                           </button>
+                           <button 
+                             onClick={() => setSfxEnabled(!sfxEnabled)} 
+                             className={`p-1.5 rounded-lg border transition-colors ${sfxEnabled ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-white/10 text-neutral-500'}`}
+                             title="Efeitos Sonoros (Whoosh)"
+                           >
+                             {sfxEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+                           </button>
+                       </div>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-2 bg-black/50 p-1 rounded-xl border border-white/5">
@@ -562,6 +589,12 @@
                           playsInline
                           preload="auto"
                           muted
+                          loop
+                          onLoadedData={() => {
+                            if (isPlaying && videoRef.current) {
+                                videoRef.current.play().catch(e => console.warn("Erro ao reproduzir novo vídeo:", e));
+                            }
+                          }}
                         />
                       ) : (
                          <div className="absolute inset-0 flex flex-col items-center justify-center text-[#D4AF37]/40 bg-neutral-900">
