@@ -3,690 +3,582 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AC Estética - Ad Bronze a Jato</title>
-    
-    <!-- Importar Tailwind CSS -->
+    <title>Estúdio de Letterings - Letras Dinâmicas & Zoom Out</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Importar Bibliotecas React -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    
-    <!-- Importar Babel -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            font-family: 'Grantha Sangam MN', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #050505; 
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+        canvas {
+            border-radius: 8px;
+            box-shadow: 0 0 60px -5px rgba(255, 230, 0, 0.25);
+            transition: border 0.3s ease;
+        }
+        .bg-grid {
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-color: #090909;
+        }
+        .bg-green-screen {
+            background-color: #00ff00;
+            background-image: none;
+        }
+    </style>
 </head>
-<body class="bg-[#050505] text-white m-0 p-0 overflow-hidden w-screen h-screen font-sans">
+<body class="min-h-screen p-6 md:p-12 flex flex-col items-center">
 
-    <div id="root" class="w-full h-full"></div>
+    <header class="text-center mb-8 w-full max-w-4xl">
+        <div class="inline-block border border-yellow-400/50 rounded px-4 py-1 mb-4 bg-yellow-400/10 shadow-[0_0_20px_rgba(255,230,0,0.4)]">
+            <span class="text-yellow-400 text-xs font-bold tracking-[0.3em] uppercase flex items-center gap-2">
+                <span class="w-2 h-2 rounded-sm bg-yellow-400 animate-pulse shadow-[0_0_10px_#ffe600]"></span>
+                Motion Design: Letras Bouncy & Zoom Out
+            </span>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-black text-white mb-4 tracking-tighter uppercase drop-shadow-lg">
+            Letras <span class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500">Dinâmicas</span>
+        </h1>
+        <p class="text-slate-400 text-sm md:text-base tracking-wide max-w-2xl mx-auto">
+            Cada letra tem vida própria (estilo moderno YouTube). Inclui animação de saída (Zoom Out) antes do fim do vídeo.
+        </p>
+    </header>
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+    <div class="flex flex-col xl:flex-row gap-8 w-full max-w-6xl">
+        <!-- Controles -->
+        <div class="w-full xl:w-1/3 bg-[#0f0f0f] border border-white/10 p-8 rounded-xl shadow-2xl flex flex-col gap-6 relative overflow-hidden">
+            <!-- Glow background do card de controle -->
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-yellow-500/20 blur-3xl rounded-full pointer-events-none transition-colors" id="controlGlow"></div>
 
-        // --- ÍCONES ---
-        const IconBase = ({ children, size = 24, className = "", fill = "none", ...props }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>{children}</svg>
-        );
-        const Play = (props) => <IconBase {...props}><polygon points="5 3 19 12 5 21 5 3"/></IconBase>;
-        const Pause = (props) => <IconBase {...props}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></IconBase>;
-        const Video = (props) => <IconBase {...props}><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></IconBase>;
-        const RefreshCw = (props) => <IconBase {...props}><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></IconBase>;
-        const Upload = (props) => <IconBase {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></IconBase>;
-        const ImageIcon = (props) => <IconBase {...props}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></IconBase>;
-        const Sparkles = (props) => <IconBase {...props}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></IconBase>;
-        const Volume2 = (props) => <IconBase {...props}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></IconBase>;
-        const VolumeX = (props) => <IconBase {...props}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></IconBase>;
-        const Scissors = (props) => <IconBase {...props}><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></IconBase>;
-        const Music = (props) => <IconBase {...props}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></IconBase>;
+            <div class="relative z-10">
+                <label class="block text-xs font-bold mb-2 text-slate-400 uppercase tracking-[0.1em]">Texto do Lettering:</label>
+                <select id="letteringSelect" class="w-full bg-black/80 text-white rounded p-3 border border-white/20 focus:outline-none focus:border-yellow-400 transition-all font-semibold uppercase text-sm tracking-wide shadow-inner">
+                    <option value="0">Custo Oculto: O Tempo ⏳</option>
+                    <option value="1">Teoria vs. Prática 💡⚙️</option>
+                    <option value="2">Foco na Venda = Comissão 💰</option>
+                    <option value="3">📁 Estudo de Caso</option>
+                    <option value="4">Ouch! 💥</option>
+                    <option value="5">Desmotivação Imediata 📉</option>
+                    <option value="6">Não dá certo ❌ | Vai embora 👋</option>
+                    <option value="7">O Segredo: Tenha um Plano 📋</option>
+                    <option value="8">RH sempre no Radar 📡</option>
+                    <option value="9">A Grande Dica: TREINE DOIS 👥</option>
+                    <option value="10">Deixe nos comentários! 👇</option>
+                </select>
+            </div>
 
-        // --- PALETA AC ESTÉTICA ---
-        const AC_COLORS = { 
-            gold: '#D4AF37', 
-            bronze: '#CD7F32',
-            dark: '#111111', 
-            light: '#FAFAFA', 
-            green: '#00FF00'
+            <div class="relative z-10">
+                <label class="block text-xs font-bold mb-3 text-slate-400 uppercase tracking-[0.1em]">Cor do Neon (Glow):</label>
+                <div class="flex gap-3 justify-between">
+                    <button class="w-10 h-10 rounded bg-[#FFE600] border-2 border-transparent focus:border-white color-btn transition-all hover:scale-110 shadow-[0_0_20px_rgba(255,230,0,0.8)]" data-color="#FFE600"></button>
+                    <button class="w-10 h-10 rounded bg-[#FF8C00] border-2 border-transparent focus:border-white color-btn transition-all hover:scale-110 shadow-[0_0_20px_rgba(255,140,0,0.8)]" data-color="#FF8C00"></button>
+                    <button class="w-10 h-10 rounded bg-[#E53935] border-2 border-transparent focus:border-white color-btn transition-all hover:scale-110 shadow-[0_0_20px_rgba(229,57,53,0.8)]" data-color="#E53935"></button>
+                    <button class="w-10 h-10 rounded bg-[#06b6d4] border-2 border-transparent focus:border-white color-btn transition-all hover:scale-110 shadow-[0_0_20px_rgba(6,182,212,0.8)]" data-color="#06b6d4"></button>
+                    <button class="w-10 h-10 rounded bg-[#a855f7] border-2 border-transparent focus:border-white color-btn transition-all hover:scale-110 shadow-[0_0_20px_rgba(168,85,247,0.8)]" data-color="#a855f7"></button>
+                    <button class="w-10 h-10 rounded bg-[#10b981] border-2 border-transparent focus:border-white color-btn transition-all hover:scale-110 shadow-[0_0_20px_rgba(16,185,129,0.8)]" data-color="#10b981"></button>
+                </div>
+            </div>
+
+            <div class="pt-6 border-t border-white/10 flex flex-col gap-3 mt-2 relative z-10">
+                
+                <div class="flex items-center gap-2 mb-2 bg-black/50 p-3 rounded border border-white/10">
+                    <input type="checkbox" id="greenScreenToggle" class="w-4 h-4 rounded text-yellow-400 bg-black border-white/20 focus:ring-yellow-400 focus:ring-offset-black" checked>
+                    <label for="greenScreenToggle" class="text-xs font-bold text-slate-300 uppercase tracking-wide cursor-pointer flex-1">
+                        Fundo Verde (Chroma Key)
+                    </label>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold mb-2 text-slate-400 uppercase tracking-[0.1em]">Formato de Exportação:</label>
+                    <select id="formatSelect" class="w-full bg-black/80 text-white rounded p-3 border border-white/10 focus:outline-none focus:border-yellow-400 transition-all font-semibold text-sm">
+                        <option value="mp4">Vídeo MP4 (.mp4)</option>
+                        <option value="webm">Vídeo WebM (.webm)</option>
+                    </select>
+                </div>
+                
+                <button id="recordBtn" class="w-full bg-yellow-400 text-black hover:bg-yellow-300 font-bold py-4 px-4 rounded shadow-[0_0_35px_rgba(255,230,0,0.6)] transition-all transform hover:scale-[1.02] flex justify-center items-center gap-2 relative overflow-hidden mt-2 border border-yellow-300">
+                    <span id="recordText" class="flex items-center gap-2 text-sm uppercase tracking-widest font-black">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                        GRAVAR ANIMAÇÃO (8s)
+                    </span>
+                    <div id="recordProgress" class="absolute bottom-0 left-0 h-1.5 bg-white w-0 transition-all ease-linear shadow-[0_0_10px_white]"></div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Preview Area -->
+        <div class="w-full xl:w-2/3 flex flex-col items-center relative">
+            <div id="canvasContainer" class="w-full bg-grid border border-white/10 rounded p-1 flex flex-col items-center justify-center relative overflow-hidden shadow-[0_0_60px_rgba(0,0,0,0.9)] aspect-[16/9] md:aspect-auto md:h-[450px]">
+                
+                <div class="absolute top-4 right-4 z-10">
+                    <button id="replayBtn" class="bg-black/60 hover:bg-white text-white hover:text-black text-xs font-bold py-2 px-4 rounded transition-all tracking-widest uppercase border border-white/20 flex items-center gap-2 backdrop-blur-sm shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        REPRODUZIR CENA
+                    </button>
+                </div>
+                
+                <canvas id="previewCanvas" width="1280" height="720" class="max-w-full h-auto rounded shadow-none bg-transparent"></canvas>
+            </div>
+            
+            <p class="mt-4 text-xs text-slate-500 text-center flex items-center gap-2 uppercase tracking-wide font-bold">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                Letras Bouncy • Zoom Out na Saída • Animação Contínua
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('previewCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('canvasContainer');
+        const controlGlow = document.getElementById('controlGlow');
+        
+        const inputs = {
+            lettering: document.getElementById('letteringSelect'),
+            greenScreen: document.getElementById('greenScreenToggle'),
+            format: document.getElementById('formatSelect')
+        };
+        
+        const btns = {
+            record: document.getElementById('recordBtn'),
+            replay: document.getElementById('replayBtn'),
+            colors: document.querySelectorAll('.color-btn')
         };
 
-        // --- SCRIPT DO AD: BRONZE A JATO (22 Segundos) ---
-        const subtitleData = [
-          { id: 1, start: 0.0, end: 2.0, text: "Cansada de ficar horas no sol" },
-          { id: 2, start: 2.0, end: 4.0, text: "sem ver nenhum resultado?" },
-          { id: 3, start: 4.0, end: 6.0, text: "Conheça o Bronze a Jato" },
-          { id: 4, start: 6.0, end: 8.0, text: "exclusivo da AC Estética!" },
-          { id: 5, start: 8.0, end: 10.0, text: "A sua marquinha perfeita" },
-          { id: 6, start: 10.0, end: 12.0, text: "em apenas 30 minutos." },
-          { id: 7, start: 12.0, end: 14.0, text: "Garante um brilho natural," },
-          { id: 8, start: 14.0, end: 16.0, text: "pele super hidratada" },
-          { id: 9, start: 16.0, end: 18.5, text: "e um resultado imediato." },
-          { id: 10, start: 18.5, end: 20.5, text: "Agende já o seu horário" },
-          { id: 11, start: 20.5, end: 23.0, text: "e sinta-se poderosa!" }
+        const recordUI = {
+            text: document.getElementById('recordText'),
+            progress: document.getElementById('recordProgress')
+        };
+
+        let config = {
+            color: '#FFE600',
+            font: "'Grantha Sangam MN', sans-serif"
+        };
+
+        const letteringConfig = [
+            { text: "CUSTO OCULTO: O TEMPO", emoji: "⏳", type: "spin", pos: "end" },
+            { text: "TEORIA VS. PRÁTICA", emoji: "💡⚙️", type: "pulse", pos: "end" },
+            { text: "FOCO NA VENDA = COMISSÃO", emoji: "💰", type: "bounce", pos: "end" },
+            { text: "ESTUDO DE CASO", emoji: "📁", type: "wiggle", pos: "start" },
+            { text: "OUCH!", emoji: "💥", type: "pulse", pos: "end" },
+            { text: "DESMOTIVAÇÃO IMEDIATA", emoji: "📉", type: "wiggle", pos: "end" },
+            { text: "NÃO DÁ CERTO ❌ | VAI EMBORA", emoji: "👋", type: "bounce", pos: "end" },
+            { text: "O SEGREDO: TENHA UM PLANO", emoji: "📋", type: "wiggle", pos: "end" },
+            { text: "RH SEMPRE NO RADAR", emoji: "📡", type: "pulse", pos: "end" },
+            { text: "A GRANDE DICA: TREINE DOIS", emoji: "👥", type: "bounce", pos: "end" },
+            { text: "DEIXE NOS COMENTÁRIOS!", emoji: "👇", type: "bounce", pos: "end" }
         ];
 
-        const MAX_TIME = 23.0; // Duração total do Ad
+        let animState = {
+            active: false,
+            startTime: null,
+            duration: 1600, // Duração da entrada (Placa 3D)
+            currentTime: 0
+        };
 
-        const highlightKeywords = [
-            'horas', 'sol', 'resultado?', 'Bronze', 'Jato', 'AC', 'Estética!', 
-            'marquinha', 'perfeita', '30', 'minutos.', 'brilho', 'natural,', 
-            'hidratada', 'imediato.', 'Agende', 'horário', 'poderosa!'
-        ];
+        let recordingState = {
+            active: false,
+            recorder: null,
+            chunks: []
+        };
 
-        // MÚSICA E EFEITOS SONOROS (SFX)
-        const MUSIC_URL = "https://cdn.pixabay.com/download/audio/2021/11/24/audio_3c316a8d61.mp3?filename=fashion-chill-beat-10515.mp3"; 
-        const SFX_URL = "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3?filename=whoosh-6316.mp3";
-
-        function App() {
-          const [currentTime, setCurrentTime] = useState(0);
-          const [isPlaying, setIsPlaying] = useState(false);
-          const [isRecordingMode, setIsRecordingMode] = useState(false);
-          const [activeSubtitle, setActiveSubtitle] = useState(null);
-          const [bgMode, setBgMode] = useState('video');
-          
-          // Novos Estados para Múltiplos Vídeos e Corte Automático
-          const [localVideos, setLocalVideos] = useState([]);
-          const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-          const [autoCutEnabled, setAutoCutEnabled] = useState(true);
-          
-          const [localLogoUrl, setLocalLogoUrl] = useState('');
-          const [countdown, setCountdown] = useState(null);
-          
-          // Controlos de Áudio
-          const [sfxEnabled, setSfxEnabled] = useState(true);
-          const [musicEnabled, setMusicEnabled] = useState(true);
-          
-          const videoRef = useRef(null);
-          const sfxRef = useRef(null);
-          const bgmRef = useRef(null);
-          const fileInputRef = useRef(null);
-          const logoInputRef = useRef(null);
-          
-          const timeRef = useRef(0);
-          const activeSubRef = useRef(null);
-          const currentVideoIndexRef = useRef(0);
-          const autoCutEnabledRef = useRef(true);
-          
-          const previewProgressBarRef = useRef(null);
-          const hudTimeRef = useRef(null);
-
-          // Sincronizar Refs de estado para o loop de animação
-          useEffect(() => { currentVideoIndexRef.current = currentVideoIndex; }, [currentVideoIndex]);
-          useEffect(() => { autoCutEnabledRef.current = autoCutEnabled; }, [autoCutEnabled]);
-
-          const getZoomLevel = (time) => {
-            return 1.1 + (time / MAX_TIME) * 0.15; 
-          };
-
-          const playAllMedia = () => {
-              if (bgMode === 'video' && videoRef.current && videoRef.current.networkState !== 3) {
-                  videoRef.current.play().catch(e => console.warn("A reprodução do vídeo foi bloqueada:", e));
-              }
-              if (musicEnabled && bgmRef.current) {
-                  bgmRef.current.volume = 0.25; // Música ambiente baixa para destacar os efeitos e a voz
-                  bgmRef.current.play().catch(e => console.warn("Música bloqueada pelo navegador:", e));
-              }
-          };
-
-          const pauseAllMedia = () => {
-              if (videoRef.current) videoRef.current.pause();
-              if (bgmRef.current) bgmRef.current.pause();
-          };
-
-          // Quando o vídeo atual muda na galeria, forçamos o novo a tocar a partir do início
-          useEffect(() => {
-             if (isPlaying) {
-                 if (videoRef.current) videoRef.current.currentTime = 0;
-                 playAllMedia();
-             }
-          }, [currentVideoIndex]);
-
-          const togglePlay = () => {
-            if (!isPlaying) {
-              playAllMedia();
-              setIsPlaying(true);
-            } else {
-              pauseAllMedia();
-              setIsPlaying(false);
-            }
-          };
-
-          const resetTime = () => {
-            timeRef.current = 0;
-            if (videoRef.current && videoRef.current.readyState > 0) videoRef.current.currentTime = 0;
-            if (bgmRef.current) bgmRef.current.currentTime = 0;
+        function init() {
+            updateColorUI();
             
-            if (previewProgressBarRef.current) previewProgressBarRef.current.style.width = '0%';
-            if (hudTimeRef.current) hudTimeRef.current.innerText = '0.00s';
+            inputs.lettering.addEventListener('change', () => triggerAnimation());
+            inputs.greenScreen.addEventListener('change', (e) => {
+                container.classList.toggle('bg-grid', !e.target.checked);
+                container.classList.toggle('bg-green-screen', e.target.checked);
+                drawFrame(performance.now());
+            });
             
-            setActiveSubtitle(null);
-            activeSubRef.current = null;
-            if (autoCutEnabled) setCurrentVideoIndex(0);
-          };
+            btns.replay.addEventListener('click', () => triggerAnimation());
+            btns.record.addEventListener('click', startRecording);
 
-          // UPLOAD MÚLTIPLO DE VÍDEOS
-          const handleVideoUpload = (e) => {
-            const files = Array.from(e.target.files);
-            if (files.length > 0) {
-              const urls = files.map(file => URL.createObjectURL(file));
-              setLocalVideos(urls);
-              setCurrentVideoIndex(0);
-              setBgMode('video');
-              setAutoCutEnabled(files.length > 1);
-              resetTime();
+            btns.colors.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    config.color = e.target.dataset.color;
+                    updateColorUI();
+                    triggerAnimation();
+                });
+            });
+
+            if(inputs.greenScreen.checked) {
+                container.classList.remove('bg-grid');
+                container.classList.add('bg-green-screen');
             }
-          };
 
-          const handleLogoUpload = (e) => {
-            const file = e.target.files[0];
-            if (file) {
-              const url = URL.createObjectURL(file);
-              setLocalLogoUrl(url);
-            }
-          };
-
-          // LOOP DE PRÉ-VISUALIZAÇÃO ULTRA RÁPIDO (60 FPS)
-          useEffect(() => {
-            let lastTime = performance.now();
-            let frameId;
-
-            const loop = (now) => {
-              if (isPlaying && countdown === null) {
-                let time = timeRef.current;
-                
-                // Atualizar o tempo independentemente do vídeo principal
-                const delta = (now - lastTime) / 1000;
-                time = timeRef.current + delta;
-                
-                if (time >= MAX_TIME) { 
-                    setIsPlaying(false); 
-                    time = 0;
-                    pauseAllMedia();
-                }
-                
-                timeRef.current = time;
-
-                // Lógica de Corte Automático (Muda o vídeo conforme avança o tempo geral)
-                if (localVideos.length > 1 && autoCutEnabledRef.current) {
-                    const timePerVideo = MAX_TIME / localVideos.length;
-                    const expectedIndex = Math.min(Math.floor(time / timePerVideo), localVideos.length - 1);
-                    if (expectedIndex !== currentVideoIndexRef.current) {
-                        currentVideoIndexRef.current = expectedIndex;
-                        setCurrentVideoIndex(expectedIndex);
-                    }
-                }
-
-                if (previewProgressBarRef.current) {
-                    previewProgressBarRef.current.style.width = `${(time / MAX_TIME) * 100}%`;
-                }
-                if (hudTimeRef.current) {
-                    hudTimeRef.current.innerText = `${time.toFixed(2)}s`;
-                }
-                if (videoRef.current && bgMode === 'video') {
-                    videoRef.current.style.transform = `scale(${getZoomLevel(time)}) translateY(-2%)`;
-                }
-
-                const sub = subtitleData.find(s => time >= s.start && time <= s.end) || null;
-                
-                // DISPARO DE SFX E ANIMAÇÃO NA MUDANÇA DE LEGENDA
-                if (sub?.id !== activeSubRef.current?.id) {
-                    activeSubRef.current = sub;
-                    setActiveSubtitle(sub);
-                    
-                    // Toca o efeito "Whoosh" sempre que uma nova legenda aparece
-                    if (sfxEnabled && sfxRef.current && sub !== null) {
-                        sfxRef.current.currentTime = 0;
-                        sfxRef.current.volume = 0.8; // Volume do Whoosh forte e impactante
-                        sfxRef.current.play().catch(e => console.log("O áudio requer interação inicial."));
-                    }
-                }
-              }
-              lastTime = now;
-              frameId = requestAnimationFrame(loop);
-            };
-
-            frameId = requestAnimationFrame(loop);
-            return () => cancelAnimationFrame(frameId);
-          }, [isPlaying, countdown, bgMode, sfxEnabled, musicEnabled, localVideos.length]);
-
-          // LÓGICA PARA TELA LIMPA & GRAVAÇÃO MANUAL NO OBS
-          const startRecordingMode = () => {
-            setIsRecordingMode(true);
-            resetTime();
-            setCountdown(5);
-          };
-
-          useEffect(() => {
-            if (countdown === null) return;
-            if (countdown > 0) {
-              const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-              return () => clearTimeout(timer);
-            } else if (countdown === 0) {
-              setCountdown(null);
-              setIsPlaying(true);
-              playAllMedia();
-            }
-          }, [countdown]);
-
-          const stopRecordingMode = () => {
-            setIsRecordingMode(false);
-            setIsPlaying(false);
-            setCountdown(null);
-            pauseAllMedia();
-          };
-
-          const currentLocalVideoUrl = localVideos.length > 0 ? localVideos[currentVideoIndex] : '';
-
-          return (
-            <div className="flex w-full h-screen bg-[#050505] text-white font-sans overflow-hidden">
-              
-              {/* Elementos de Áudio Ocultos */}
-              <audio ref={bgmRef} src={MUSIC_URL} preload="auto" loop crossOrigin="anonymous"></audio>
-              <audio ref={sfxRef} src={SFX_URL} preload="auto" crossOrigin="anonymous"></audio>
-
-              {/* ESTILOS ÚNICOS AD IMPACTANTE */}
-              <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,300;0,400;0,600&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
-
-                @keyframes letterSlam { 
-                  0% { transform: scale(0) translateY(60px) rotate(-25deg); opacity: 0; filter: blur(8px); } 
-                  50% { transform: scale(1.3) translateY(-15px) rotate(10deg); opacity: 1; filter: blur(0px); } 
-                  100% { transform: scale(1) translateY(0) rotate(-4deg); opacity: 1; filter: blur(0px); } 
-                }
-
-                @keyframes letterFloat {
-                  0% { transform: translateY(0px) rotate(-4deg); }
-                  100% { transform: translateY(-6px) rotate(0deg); }
-                }
-
-                @keyframes smoothPop {
-                  0% { transform: scale(0.8) translateY(10px); opacity: 0; }
-                  100% { transform: scale(1) translateY(0); opacity: 1; }
-                }
-
-                .word-reveal-smooth { 
-                  display: inline-block; 
-                  animation: smoothPop 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; 
-                  opacity: 0; 
-                }
-
-                .letter-anim {
-                  display: inline-block;
-                  opacity: 0;
-                  animation: 
-                    letterSlam 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
-                    letterFloat 2s ease-in-out infinite alternate;
-                }
-
-                .text-ig-pill {
-                  font-family: 'Jost', sans-serif;
-                  font-weight: 300;
-                  font-style: italic;
-                  background-color: rgba(0, 0, 0, 0.85);
-                  padding: 4px 14px;
-                  border-radius: 12px;
-                  color: #FAFAFA;
-                  line-height: 1.1;
-                  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-                  border: 1px solid rgba(255,255,255,0.1);
-                }
-
-                @keyframes goldShine {
-                  0% { background-position: 0% 50%; }
-                  100% { background-position: 200% 50%; }
-                }
-
-                .text-3d-gold { 
-                  font-family: 'Jost', sans-serif;
-                  font-weight: 300;
-                  text-transform: uppercase;
-                  letter-spacing: 2px;
-                  background: linear-gradient(90deg, #FFF8DC 0%, #D4AF37 25%, #FFF8DC 50%, #CD7F32 75%, #FFF8DC 100%);
-                  background-size: 200% auto;
-                  -webkit-background-clip: text;
-                  -webkit-text-fill-color: transparent;
-                  -webkit-text-stroke: 0.5px rgba(255,255,255,0.3);
-                  filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.9)) 
-                          drop-shadow(0px 0px 15px rgba(212,175,55,0.6));
-                  transform-origin: bottom center;
-                  animation-name: letterSlam, letterFloat, goldShine;
-                  animation-duration: 0.5s, 2s, 4s;
-                  animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1), ease-in-out, linear;
-                  animation-iteration-count: 1, infinite, infinite;
-                  animation-direction: normal, alternate, normal;
-                  animation-fill-mode: forwards, forwards, forwards;
-                }
-
-                .color-graded-video-ac { 
-                  filter: sepia(0.35) saturate(1.4) contrast(1.15) brightness(1.05) hue-rotate(-5deg); 
-                }
-
-                @keyframes floatUp {
-                  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
-                  50% { opacity: 0.8; }
-                  100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
-                }
-                .gold-dust {
-                  position: absolute;
-                  background: #D4AF37;
-                  border-radius: 50%;
-                  filter: blur(1px);
-                  box-shadow: 0 0 10px 2px #D4AF37;
-                  animation: floatUp 3s infinite ease-in;
-                }
-                @keyframes sunFlare {
-                  0%, 100% { opacity: 0.3; transform: scale(1); }
-                  50% { opacity: 0.5; transform: scale(1.1); }
-                }
-                .warm-flare { 
-                  background: radial-gradient(circle at 80% 20%, rgba(212,175,55,0.2) 0%, rgba(0,0,0,0) 60%); 
-                  animation: sunFlare 8s infinite alternate ease-in-out; 
-                  pointer-events: none; 
-                }
-
-                /* Scrollbar Customizada */
-                .custom-scrollbar::-webkit-scrollbar {
-                  height: 6px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-track {
-                  background: rgba(255,255,255,0.05);
-                  border-radius: 10px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                  background: rgba(212,175,55,0.5);
-                  border-radius: 10px;
-                }
-              `}</style>
-
-              {/* PAINEL LATERAL DE CONTROLO */}
-              {!isRecordingMode && (
-                <div className="w-80 h-full border-r border-[#D4AF37]/20 bg-[#0a0a0a] p-6 flex flex-col gap-6 z-20 shadow-2xl shrink-0 overflow-y-auto custom-scrollbar">
-                  <div className="space-y-1 pb-4 border-b border-white/5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-[#D4AF37] to-[#CD7F32] rounded-full flex items-center justify-center font-bold text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]">
-                        <Sparkles size={20} />
-                      </div>
-                      <div>
-                        <h1 className="text-xl font-black tracking-tight" style={{fontFamily: "'Playfair Display', serif"}}>Ads Editor</h1>
-                        <p className="text-[9px] text-[#D4AF37] font-bold uppercase tracking-[0.2em]">Alta Conversão</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <button 
-                      onClick={togglePlay}
-                      className={`w-full py-4 rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2 ${isPlaying ? 'bg-white text-black' : 'bg-gradient-to-r from-[#D4AF37] to-[#CD7F32] text-black shadow-lg shadow-[#D4AF37]/20 hover:scale-[1.02]'}`}
-                    >
-                      {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
-                      {isPlaying ? 'PAUSAR PREVIEW' : 'INICIAR PREVIEW AD'}
-                    </button>
-                    <button 
-                      onClick={resetTime}
-                      className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold flex items-center justify-center gap-2 transition-colors"
-                    >
-                      <RefreshCw size={14} /> RESETAR TEMPO
-                    </button>
-                  </div>
-
-                  <div className="pt-2 space-y-3">
-                    <div className="flex items-center justify-between">
-                       <p className="text-[10px] text-[#D4AF37] font-bold uppercase tracking-widest">Áudio e Mídia</p>
-                       <div className="flex items-center gap-1">
-                           <button 
-                             onClick={() => setMusicEnabled(!musicEnabled)} 
-                             className={`p-1.5 rounded-lg border transition-colors ${musicEnabled ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-white/10 text-neutral-500'}`}
-                             title="Música de Fundo"
-                           >
-                             {musicEnabled ? <Music size={14} /> : <VolumeX size={14} />}
-                           </button>
-                           <button 
-                             onClick={() => setSfxEnabled(!sfxEnabled)} 
-                             className={`p-1.5 rounded-lg border transition-colors ${sfxEnabled ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-white/10 text-neutral-500'}`}
-                             title="Efeitos Sonoros (Whoosh)"
-                           >
-                             {sfxEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
-                           </button>
-                       </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2 bg-black/50 p-1 rounded-xl border border-white/5">
-                      <button 
-                        onClick={() => setBgMode('video')}
-                        className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${bgMode === 'video' ? 'bg-white text-black' : 'text-neutral-500 hover:text-white'}`}
-                      >
-                        <Video size={14} /> VÍDEO
-                      </button>
-                      <button 
-                        onClick={() => setBgMode('chroma')}
-                        className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${bgMode === 'chroma' ? 'bg-[#00FF00] text-black' : 'text-neutral-500 hover:text-white'}`}
-                      >
-                        <ImageIcon size={14} /> CHROMA
-                      </button>
-                    </div>
-
-                    <div className="mt-4 pt-2 space-y-2">
-                      <input type="file" accept="video/*" multiple className="hidden" ref={fileInputRef} onChange={handleVideoUpload} />
-                      <button 
-                        onClick={() => fileInputRef.current.click()}
-                        className={`w-full py-3 px-4 rounded-xl border text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all ${localVideos.length > 0 ? 'border-[#D4AF37]/50 bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-white/10 text-neutral-400 hover:bg-white/5'}`}
-                      >
-                        <div className="flex items-center gap-2">
-                          {localVideos.length > 0 ? `${localVideos.length} VÍDEOS CARREGADOS ✓` : '1. CARREGAR VÍDEOS'}
-                          <Video size={16} />
-                        </div>
-                        {localVideos.length === 0 && <span className="text-[9px] font-normal opacity-70">Pode selecionar vários vídeos de uma vez</span>}
-                      </button>
-
-                      {/* GALERIA DE VÍDEOS & CORTE AUTOMÁTICO */}
-                      {localVideos.length > 0 && (
-                        <div className="bg-black/30 border border-white/5 rounded-xl p-3 mt-2">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Cenas</span>
-                            {localVideos.length > 1 && (
-                              <button 
-                                onClick={() => setAutoCutEnabled(!autoCutEnabled)}
-                                className={`text-[9px] px-2 py-1 rounded border flex items-center gap-1 transition-colors ${autoCutEnabled ? 'bg-[#D4AF37]/20 border-[#D4AF37]/50 text-[#D4AF37]' : 'border-white/20 text-neutral-500'}`}
-                                title="Mudar vídeo automaticamente com o tempo"
-                              >
-                                <Scissors size={10} /> CORTE AUTO
-                              </button>
-                            )}
-                          </div>
-                          
-                          <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar snap-x">
-                            {localVideos.map((url, idx) => (
-                              <button
-                                key={idx}
-                                onClick={() => { setCurrentVideoIndex(idx); setAutoCutEnabled(false); }}
-                                className={`relative shrink-0 w-16 h-20 rounded-lg overflow-hidden border-2 snap-center transition-all duration-300 ${currentVideoIndex === idx ? 'border-[#D4AF37] scale-105 shadow-[0_0_10px_rgba(212,175,55,0.5)]' : 'border-transparent opacity-50 hover:opacity-100'}`}
-                                title={`Cena ${idx + 1}`}
-                              >
-                                <video src={url} className="w-full h-full object-cover pointer-events-none" muted preload="metadata" />
-                                <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black to-transparent text-[9px] font-bold text-white text-center pt-4 pb-1">
-                                  #{idx + 1}
-                                </div>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <input type="file" accept="image/*" className="hidden" ref={logoInputRef} onChange={handleLogoUpload} />
-                      <button 
-                        onClick={() => logoInputRef.current.click()}
-                        className={`w-full py-4 px-4 rounded-xl border text-xs font-bold flex items-center justify-between transition-all ${localLogoUrl ? 'border-[#D4AF37]/50 bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-white/10 text-neutral-400 hover:bg-white/5'}`}
-                      >
-                        {localLogoUrl ? 'LOGO CARREGADA ✓' : '2. CARREGAR SUA LOGO'}
-                        <Upload size={16} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="mt-auto space-y-4 pt-4 border-t border-white/5">
-                    <button 
-                      onClick={startRecordingMode}
-                      className={`w-full py-4 rounded-2xl font-black text-sm shadow-xl transition-all flex flex-col items-center justify-center gap-1 bg-white text-black hover:scale-[1.02]`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Video size={18} />
-                        PREPARAR TELA PARA OBS
-                      </div>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* ÁREA DE RENDERIZAÇÃO DOM */}
-              <div className="flex-1 h-full flex items-center justify-center relative p-0 sm:p-8 bg-[#020202]">
-                
-                {countdown !== null && countdown > 0 && (
-                  <div className="absolute inset-0 z-[200] flex flex-col items-center justify-center bg-black/90 backdrop-blur-md">
-                    <h2 className="text-4xl font-black text-[#D4AF37] mb-6 text-center leading-tight">
-                      Ligue o gravador do OBS<br/>
-                      <span className="text-white font-medium text-2xl">O anúncio inicia em:</span>
-                    </h2>
-                    <div className="text-9xl font-black text-white drop-shadow-[0_0_40px_rgba(212,175,55,0.6)] animate-pulse">
-                      {countdown}
-                    </div>
-                  </div>
-                )}
-                
-                {isRecordingMode && countdown === null && (
-                  <button onClick={stopRecordingMode} className="absolute top-6 left-6 z-50 px-4 py-2 bg-red-600/20 border border-red-600/50 hover:bg-red-600 text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-2 transition-all opacity-10 hover:opacity-100">
-                    <Pause size={14} fill="currentColor" /> PARAR / SAIR
-                  </button>
-                )}
-
-                {!isRecordingMode && (
-                  <div className="absolute top-6 right-6 flex items-center gap-4 z-50 bg-black/40 backdrop-blur-md px-4 py-2 rounded-2xl border border-[#D4AF37]/20 hidden sm:flex">
-                     <div className="flex flex-col items-end">
-                       <span className="text-[9px] font-bold text-[#D4AF37] uppercase tracking-[0.2em]">Ad Time</span>
-                       <span ref={hudTimeRef} className="text-xl font-mono text-white tracking-widest leading-none mt-1">0.00s</span>
-                     </div>
-                  </div>
-                )}
-
-                {/* CONTAINER DO VÍDEO 9:16 */}
-                <div 
-                  className="relative overflow-hidden transition-all duration-500 flex items-center justify-center"
-                  style={{ 
-                    aspectRatio: '9/16', 
-                    height: '100%',
-                    maxHeight: isRecordingMode ? '100vh' : '88vh',
-                    backgroundColor: bgMode === 'chroma' ? AC_COLORS.green : '#000',
-                    borderRadius: isRecordingMode ? '0px' : '24px',
-                    border: isRecordingMode ? 'none' : '1px solid rgba(212,175,55,0.2)',
-                    boxShadow: isRecordingMode ? 'none' : '0 30px 60px -12px rgba(0, 0, 0, 0.9), 0 0 100px rgba(212,175,55,0.08)'
-                  }}
-                >
-                  {bgMode === 'video' && (
-                    <div className="absolute inset-0 w-full h-full bg-black z-0">
-                      {currentLocalVideoUrl ? (
-                        <video
-                          ref={videoRef}
-                          src={currentLocalVideoUrl}
-                          crossOrigin="anonymous"
-                          className="absolute inset-0 w-full h-full object-cover color-graded-video-ac origin-center"
-                          style={{ transform: `scale(1.1) translateY(-2%)`, transition: 'transform 0.1s linear' }}
-                          playsInline
-                          preload="auto"
-                          muted
-                          loop
-                          onLoadedData={() => {
-                            if (isPlaying && videoRef.current) {
-                                videoRef.current.play().catch(e => console.warn("Erro ao reproduzir novo vídeo:", e));
-                            }
-                          }}
-                        />
-                      ) : (
-                         <div className="absolute inset-0 flex flex-col items-center justify-center text-[#D4AF37]/40 bg-neutral-900">
-                           <ImageIcon size={48} className="mb-4 opacity-50" />
-                           <p className="text-sm font-bold uppercase tracking-widest text-center px-4">Selecione vários vídeos<br/>na barra lateral</p>
-                         </div>
-                      )}
-                      
-                      {/* Efeitos Especiais de Tela para Bronze a Jato */}
-                      <div className="warm-flare absolute inset-0 w-full h-full"></div>
-                      <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/80 pointer-events-none"></div>
-                    </div>
-                  )}
-
-                  {/* LOGOTIPO NO TOPO */}
-                  <div className="absolute top-10 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none z-10 w-[80%] max-w-[200px]">
-                     {localLogoUrl ? (
-                       <img src={localLogoUrl} alt="Logo Cliente" className="max-h-[100px] w-auto object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]" />
-                     ) : (
-                       <div className="flex flex-col items-center">
-                         <span className="text-[42px] leading-none font-black text-white tracking-widest drop-shadow-xl" style={{fontFamily: "'Playfair Display', serif"}}>AC</span>
-                         <div className="flex items-center gap-2 mt-1">
-                            <div className="w-4 h-[1px] bg-[#D4AF37]"></div>
-                            <span className="text-[12px] leading-none text-[#D4AF37] font-bold uppercase tracking-[0.3em] drop-shadow-md">Estética</span>
-                            <div className="w-4 h-[1px] bg-[#D4AF37]"></div>
-                         </div>
-                       </div>
-                     )}
-                  </div>
-
-                  {/* LEGENDAS DINÂMICAS */}
-                  <div className="absolute bottom-28 left-0 right-0 px-4 z-20 pointer-events-none flex flex-col items-center">
-                    {activeSubtitle && (
-                      <div className="relative w-full flex justify-center pb-4">
-                        
-                        {/* Pó Dourado */}
-                        <div className="absolute inset-0 overflow-visible pointer-events-none opacity-60">
-                           <div className="gold-dust w-1.5 h-1.5 left-[30%] top-[20%]" style={{animationDelay: '0.1s'}}></div>
-                           <div className="gold-dust w-2 h-2 left-[70%] top-[40%]" style={{animationDelay: '0.5s'}}></div>
-                           <div className="gold-dust w-1 h-1 left-[50%] top-[80%]" style={{animationDelay: '1.2s'}}></div>
-                        </div>
-
-                        <div className="relative flex flex-wrap justify-center items-center gap-x-3 gap-y-4 max-w-[98%] text-center z-10">
-                          {activeSubtitle.text.split(' ').map((word, wordIdx) => {
-                            const cleanWord = word.replace(/[.,!?]/g, '');
-                            const isKeyword = highlightKeywords.some(kw => cleanWord.toLowerCase() === kw.toLowerCase().replace(/[.,!?]/g, ''));
-                            
-                            return (
-                              <span key={`${activeSubtitle.id}-word-${wordIdx}`} className="whitespace-nowrap">
-                                {isKeyword ? (
-                                  word.split('').map((char, charIdx) => (
-                                    <span 
-                                      key={`char-${charIdx}`}
-                                      className="letter-anim text-[58px] md:text-[72px] text-3d-gold font-light"
-                                      style={{ 
-                                        animationDelay: `${(wordIdx * 0.05) + (charIdx * 0.03)}s, ${(wordIdx * 0.05) + (charIdx * 0.03) + 0.5}s, 0s`,
-                                      }}
-                                    >
-                                      {char}
-                                    </span>
-                                  ))
-                                ) : (
-                                  <span 
-                                    className="word-reveal-smooth"
-                                    style={{ animationDelay: `${wordIdx * 0.08}s` }}
-                                  >
-                                    <span className="text-[28px] md:text-[34px] text-ig-pill inline-block font-light">
-                                      {word}
-                                    </span>
-                                  </span>
-                                )}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Barra de Progresso Dourada */}
-                  <div className="absolute bottom-0 left-0 w-full h-1.5 bg-black/40 z-30">
-                    <div ref={previewProgressBarRef} className="h-full bg-gradient-to-r from-[#CD7F32] to-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.8)]" style={{ width: '0%' }}></div>
-                  </div>
-
-                </div>
-              </div>
-            </div>
-          );
+            requestAnimationFrame(renderLoop);
+            setTimeout(triggerAnimation, 300); 
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        function hexToRgba(hex, alpha) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        function updateColorUI() {
+            controlGlow.style.backgroundColor = hexToRgba(config.color, 0.25);
+            btns.record.style.backgroundColor = config.color;
+            btns.record.style.color = (config.color === '#FFFFFF' || config.color === '#FFE600') ? '#000000' : '#FFFFFF';
+            btns.record.style.boxShadow = `0 0 35px ${hexToRgba(config.color, 0.6)}`;
+            
+            btns.colors.forEach(b => {
+                b.style.borderColor = b.dataset.color === config.color ? 'white' : 'transparent';
+                if(b.dataset.color === config.color) {
+                    b.classList.add('scale-110', 'ring-2', 'ring-white/50', 'ring-offset-2', 'ring-offset-black');
+                } else {
+                    b.classList.remove('scale-110', 'ring-2', 'ring-white/50', 'ring-offset-2', 'ring-offset-black');
+                }
+            });
+        }
+
+        // Curva de entrada elástica
+        function easeOutBack(x) {
+            const c1 = 1.70158;
+            const c3 = c1 + 1;
+            return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
+        }
+
+        // Curva de saída sugada (Pop-out/Zoom out)
+        function easeInBack(x) {
+            const c1 = 1.70158;
+            const c3 = c1 + 1;
+            return c3 * x * x * x - c1 * x * x;
+        }
+
+        function triggerAnimation() {
+            animState.active = true;
+            animState.startTime = performance.now();
+        }
+
+        function renderLoop(timestamp) {
+            animState.currentTime = timestamp;
+            drawFrame(timestamp);
+            requestAnimationFrame(renderLoop); 
+        }
+
+        function drawRoundRect(ctx, x, y, width, height, radius) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+        }
+
+        // Renderiza e Anima Emojis
+        function drawAnimatedEmoji(ctx, emoji, x, y, type, timestamp, animElapsed) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            // Pop-in do Emoji junto com o texto
+            let popScale = 1;
+            if (animElapsed < 2500) {
+                // Emojis estouram ligeiramente depois das letras
+                const popElapsed = Math.max(0, animElapsed - 400); 
+                const popProgress = Math.min(popElapsed / 500, 1);
+                popScale = easeOutBack(popProgress);
+            }
+            ctx.scale(popScale, popScale);
+
+            if (popScale > 0.01) {
+                if (type === "spin") {
+                    ctx.rotate(timestamp * 0.003); 
+                } else if (type === "bounce") {
+                    ctx.translate(0, Math.sin(timestamp * 0.008) * 12);
+                } else if (type === "pulse") {
+                    const s = 1 + Math.sin(timestamp * 0.006) * 0.25;
+                    ctx.scale(s, s);
+                } else if (type === "wiggle") {
+                    ctx.rotate(Math.sin(timestamp * 0.006) * 0.35);
+                }
+            }
+
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(emoji, 0, 0);
+            ctx.restore();
+        }
+
+        // --- CORE RENDER ---
+        function drawFrame(timestamp) {
+            const opt = letteringConfig[inputs.lettering.selectedIndex];
+            const w = canvas.width;
+            const h = canvas.height;
+
+            ctx.clearRect(0, 0, w, h);
+            
+            if (inputs.greenScreen.checked) {
+                ctx.fillStyle = '#00ff00';
+                ctx.fillRect(0, 0, w, h);
+            }
+
+            // Temporização Geral
+            let elapsed = 0;
+            if (animState.startTime) {
+                elapsed = timestamp - animState.startTime;
+            }
+
+            // Progressos
+            const entryProgress = Math.min(elapsed / animState.duration, 1);
+            
+            // Lógica do Zoom Out de Saída (Aos 7.3s inicia a saída, dura 0.4s)
+            let exitScale = 1;
+            if (elapsed > 7300) {
+                const exitProgress = Math.min((elapsed - 7300) / 400, 1);
+                // Subtrai do 1 para fazer de 1 até 0, com curva InBack que dá o "pulinho" antes de sumir
+                exitScale = Math.max(0, 1 - easeInBack(exitProgress)); 
+            }
+
+            if (exitScale <= 0.01) return; // Se já sumiu, corta a renderização para poupar memória
+
+            const floatY = Math.sin(timestamp / 500) * 8;
+            const floatZoom = 1 + Math.sin(timestamp / 600) * 0.04;
+            
+            const fontSize = 75; 
+            ctx.font = `bold ${fontSize}px ${config.font}`;
+
+            // Medir exatamente o tamanho letra a letra para kerning perfeito
+            let sumTextWidth = 0;
+            for(let k = 0; k < opt.text.length; k++) {
+                sumTextWidth += ctx.measureText(opt.text[k]).width;
+            }
+            const mainTextWidth = sumTextWidth;
+            const emojiWidth = ctx.measureText(opt.emoji).width;
+            const gap = 20;
+            const totalContentWidth = mainTextWidth + gap + emojiWidth;
+
+            const padX = 70;
+            const padY = 40;
+            const rectW = totalContentWidth + (padX * 2);
+            const rectH = fontSize + (padY * 2);
+
+            const totalLayers = 3; 
+            
+            for (let i = totalLayers - 1; i >= 0; i--) {
+                const staggerDelay = i * 0.12; 
+                let layerProgress = 0;
+                
+                if (elapsed > 0) {
+                    // Normaliza o progresso para esta camada específica baseada no delay
+                    const normalizedTime = (entryProgress - staggerDelay) / (1 - staggerDelay);
+                    layerProgress = Math.max(0, Math.min(1, normalizedTime));
+                }
+
+                if (layerProgress <= 0) continue;
+
+                const easeValue = easeOutBack(layerProgress);
+
+                // Aplica Zoom de Entrada, Respiração Contínua, e o novo Zoom Out
+                const entryZoom = (elapsed < animState.duration) ? (0.2 + 0.8 * easeValue) : 1;
+                const finalZoom = entryZoom * floatZoom * exitScale;
+
+                ctx.save();
+                ctx.translate(w / 2, h / 2 + floatY);
+                ctx.scale(finalZoom, finalZoom);
+                
+                const pivotY = rectH / 2;
+                const angle = (Math.PI / 2) * (1 - easeValue);
+                const scaleY = Math.cos(angle);
+                
+                ctx.translate(0, pivotY);
+                const baseScale = 1 + (i * 0.08); 
+                ctx.scale(baseScale, scaleY * baseScale);
+                ctx.translate(0, -pivotY);
+                
+                const isMainLayer = (i === 0);
+                
+                ctx.globalAlpha = isMainLayer ? 1 : 0.4 - (i * 0.1);
+                
+                if (!isMainLayer && !inputs.greenScreen.checked) {
+                    ctx.globalCompositeOperation = 'lighter'; 
+                }
+
+                if (isMainLayer) {
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+                    ctx.shadowBlur = 20;
+                    ctx.shadowOffsetY = 15;
+                    ctx.filter = 'none';
+                } else {
+                    ctx.shadowColor = config.color;
+                    ctx.shadowBlur = 80 + (i * 30); 
+                    ctx.shadowOffsetY = 0;
+                    ctx.filter = `blur(${i * 6}px)`;
+                }
+
+                // 1. DESENHAR A PLACA
+                drawRoundRect(ctx, -rectW/2, -rectH/2, rectW, rectH, 12);
+                
+                if (isMainLayer) {
+                    ctx.fillStyle = 'rgba(12, 12, 15, 0.9)';
+                    ctx.fill();
+                    ctx.lineWidth = 4;
+                    ctx.strokeStyle = config.color;
+                    ctx.stroke();
+                } else {
+                    ctx.fillStyle = hexToRgba(config.color, 0.25);
+                    ctx.fill();
+                    ctx.lineWidth = 6;
+                    ctx.strokeStyle = config.color;
+                    ctx.stroke();
+                }
+
+                // 2. DESENHAR LETRAS DINÂMICAS & EMOJIS
+                ctx.shadowColor = 'transparent'; 
+                ctx.shadowBlur = 0;
+                
+                let currentX = -totalContentWidth / 2;
+                
+                if (isMainLayer) {
+                    ctx.fillStyle = '#FFE600'; 
+                    ctx.shadowColor = hexToRgba(config.color, 0.9);
+                    ctx.shadowBlur = 40; 
+                } else {
+                    ctx.fillStyle = config.color;
+                    ctx.shadowColor = config.color;
+                    ctx.shadowBlur = 60; 
+                }
+                
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+
+                // EMOJI INICIAL
+                if (opt.pos === "start") {
+                    drawAnimatedEmoji(ctx, opt.emoji, currentX + emojiWidth / 2, 0, opt.type, timestamp, elapsed);
+                    currentX += emojiWidth + gap;
+                }
+
+                // RENDERIZAR LETRA POR LETRA (Animação YouTube Moderna)
+                for (let k = 0; k < opt.text.length; k++) {
+                    const char = opt.text[k];
+                    const charW = ctx.measureText(char).width;
+
+                    // Atraso de cascata para cada letra aparecer (Pop-in)
+                    let letterPop = 1;
+                    if (elapsed < 2000) {
+                        const popStart = 150 + (k * 25); // Inicia após 150ms, 25ms por letra
+                        const popElapsed = Math.max(0, elapsed - popStart);
+                        const popProgress = Math.min(popElapsed / 300, 1);
+                        letterPop = easeOutBack(popProgress);
+                    }
+
+                    // Se a letra ainda não estourou, ignora para não perder frame
+                    if (letterPop > 0.01) {
+                        // Onda Contínua para cima e para baixo
+                        const wave = Math.sin(timestamp * 0.006 + k * 0.4) * 4; 
+                        // Micro-rotação nas letras
+                        const rot = Math.sin(timestamp * 0.004 + k * 0.2) * 0.08; 
+
+                        ctx.save();
+                        // Desloca para o centro exato da letra para aplicar rotação e escala perfeitamente
+                        ctx.translate(currentX + charW / 2, 4 + wave);
+                        ctx.rotate(rot);
+                        ctx.scale(letterPop, letterPop);
+                        
+                        ctx.fillText(char, 0, 0);
+                        ctx.restore();
+                    }
+                    
+                    currentX += charW; // Avança cursor de posicionamento
+                }
+
+                // EMOJI FINAL
+                if (opt.pos === "end") {
+                    currentX += gap;
+                    drawAnimatedEmoji(ctx, opt.emoji, currentX + emojiWidth / 2, 4, opt.type, timestamp, elapsed);
+                }
+
+                ctx.restore();
+            }
+        }
+
+        // --- GRAVAÇÃO (MP4 / WEBM) ---
+        function startRecording() {
+            if (recordingState.active) return;
+            
+            const format = inputs.format.value;
+            let mimeTypeToUse = '';
+            let extension = '';
+
+            if (format === 'mp4') {
+                mimeTypeToUse = 'video/mp4;codecs=avc1'; 
+                extension = 'mp4';
+            } else {
+                mimeTypeToUse = 'video/webm;codecs=vp9';
+                extension = 'webm';
+            }
+
+            recordingState.active = true;
+            recordingState.chunks = [];
+            
+            btns.record.style.backgroundColor = '#dc2626'; 
+            btns.record.style.boxShadow = '0 0 40px rgba(220, 38, 38, 0.8)';
+            
+            recordUI.text.innerHTML = '🔴 GRAVANDO 60FPS...';
+            recordUI.progress.style.transitionDuration = '8s'; 
+            recordUI.progress.style.width = '100%';
+
+            // Dispara Animação do zero!
+            animState.startTime = performance.now();
+
+            const stream = canvas.captureStream(60);
+            
+            try {
+                recordingState.recorder = new MediaRecorder(stream, { mimeType: mimeTypeToUse, videoBitsPerSecond: 8000000 }); 
+            } catch (e) {
+                try {
+                    recordingState.recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=h264', videoBitsPerSecond: 8000000 });
+                    extension = 'webm'; 
+                } catch (err) {
+                    recordingState.recorder = new MediaRecorder(stream);
+                    extension = 'webm';
+                }
+            }
+
+            recordingState.recorder.ondataavailable = e => {
+                if (e.data.size > 0) recordingState.chunks.push(e.data);
+            };
+
+            recordingState.recorder.onstop = () => {
+                const blob = new Blob(recordingState.chunks, { type: recordingState.recorder.mimeType || 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Lettering_Moderno_${Date.now()}.${extension}`;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                recordingState.active = false;
+                
+                updateColorUI();
+                recordUI.text.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg> GRAVAR ANIMAÇÃO (8s)`;
+                recordUI.progress.style.transitionDuration = '0s';
+                recordUI.progress.style.width = '0%';
+            };
+
+            recordingState.recorder.start();
+
+            // Desliga aos 8 segundos exatos (Nessa altura o Zoom Out já ocorreu aos 7.3s e a tela estará limpa)
+            setTimeout(() => {
+                if (recordingState.recorder.state === 'recording') {
+                    recordingState.recorder.stop();
+                }
+            }, 8000);
+        }
+
+        window.addEventListener('load', init);
+
     </script>
 </body>
 </html>
