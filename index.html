@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-PT">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estúdio de Letterings - Letras Dinâmicas & Zoom Out</title>
+    <title>Estúdio de Letterings - Letras Dinâmicas (Auto-Scale)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -36,14 +36,14 @@
         <div class="inline-block border border-yellow-400/50 rounded px-4 py-1 mb-4 bg-yellow-400/10 shadow-[0_0_20px_rgba(255,230,0,0.4)]">
             <span class="text-yellow-400 text-xs font-bold tracking-[0.3em] uppercase flex items-center gap-2">
                 <span class="w-2 h-2 rounded-sm bg-yellow-400 animate-pulse shadow-[0_0_10px_#ffe600]"></span>
-                Motion Design: Letras Bouncy & Zoom Out
+                Motion Design: Auto-Scale & Letras Vivas
             </span>
         </div>
         <h1 class="text-4xl md:text-5xl font-black text-white mb-4 tracking-tighter uppercase drop-shadow-lg">
             Letras <span class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500">Dinâmicas</span>
         </h1>
         <p class="text-slate-400 text-sm md:text-base tracking-wide max-w-2xl mx-auto">
-            Cada letra tem vida própria (estilo moderno YouTube). Inclui animação de saída (Zoom Out) antes do fim do vídeo.
+            Ajuste automático de tamanho: frases longas agora cabem na tela perfeitamente! Com animação de saída (Zoom Out) aos 8s.
         </p>
     </header>
 
@@ -125,7 +125,7 @@
             
             <p class="mt-4 text-xs text-slate-500 text-center flex items-center gap-2 uppercase tracking-wide font-bold">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                Letras Bouncy • Zoom Out na Saída • Animação Contínua
+                Auto-Resizing • Zoom Out na Saída • 8 Segundos
             </p>
         </div>
     </div>
@@ -161,11 +161,11 @@
         const letteringConfig = [
             { text: "CUSTO OCULTO: O TEMPO", emoji: "⏳", type: "spin", pos: "end" },
             { text: "TEORIA VS. PRÁTICA", emoji: "💡⚙️", type: "pulse", pos: "end" },
-            { text: "FOCO NA VENDA = COMISSÃO", emoji: "💰", type: "bounce", pos: "end" },
+            { text: "FOCO NA VENDA = COMISSÃO", emoji: "💰", type: "bounce", pos: "end" }, // <--- Esta era longa
             { text: "ESTUDO DE CASO", emoji: "📁", type: "wiggle", pos: "start" },
             { text: "OUCH!", emoji: "💥", type: "pulse", pos: "end" },
             { text: "DESMOTIVAÇÃO IMEDIATA", emoji: "📉", type: "wiggle", pos: "end" },
-            { text: "NÃO DÁ CERTO ❌ | VAI EMBORA", emoji: "👋", type: "bounce", pos: "end" },
+            { text: "NÃO DÁ CERTO ❌ | VAI EMBORA", emoji: "👋", type: "bounce", pos: "end" }, // <--- E esta também
             { text: "O SEGREDO: TENHA UM PLANO", emoji: "📋", type: "wiggle", pos: "end" },
             { text: "RH SEMPRE NO RADAR", emoji: "📡", type: "pulse", pos: "end" },
             { text: "A GRANDE DICA: TREINE DOIS", emoji: "👥", type: "bounce", pos: "end" },
@@ -238,14 +238,13 @@
             });
         }
 
-        // Curva de entrada elástica
+        // Curvas de Animação
         function easeOutBack(x) {
             const c1 = 1.70158;
             const c3 = c1 + 1;
             return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
         }
 
-        // Curva de saída sugada (Pop-out/Zoom out)
         function easeInBack(x) {
             const c1 = 1.70158;
             const c3 = c1 + 1;
@@ -282,10 +281,9 @@
             ctx.save();
             ctx.translate(x, y);
 
-            // Pop-in do Emoji junto com o texto
+            // Pop-in do Emoji
             let popScale = 1;
             if (animElapsed < 2500) {
-                // Emojis estouram ligeiramente depois das letras
                 const popElapsed = Math.max(0, animElapsed - 400); 
                 const popProgress = Math.min(popElapsed / 500, 1);
                 popScale = easeOutBack(popProgress);
@@ -324,54 +322,79 @@
                 ctx.fillRect(0, 0, w, h);
             }
 
-            // Temporização Geral
+            // Temporização
             let elapsed = 0;
             if (animState.startTime) {
                 elapsed = timestamp - animState.startTime;
             }
 
-            // Progressos
             const entryProgress = Math.min(elapsed / animState.duration, 1);
             
-            // Lógica do Zoom Out de Saída (Aos 7.3s inicia a saída, dura 0.4s)
+            // Lógica de Zoom Out
             let exitScale = 1;
             if (elapsed > 7300) {
                 const exitProgress = Math.min((elapsed - 7300) / 400, 1);
-                // Subtrai do 1 para fazer de 1 até 0, com curva InBack que dá o "pulinho" antes de sumir
                 exitScale = Math.max(0, 1 - easeInBack(exitProgress)); 
             }
 
-            if (exitScale <= 0.01) return; // Se já sumiu, corta a renderização para poupar memória
+            if (exitScale <= 0.01) return;
 
             const floatY = Math.sin(timestamp / 500) * 8;
             const floatZoom = 1 + Math.sin(timestamp / 600) * 0.04;
             
-            const fontSize = 75; 
+            // ----------------------------------------------------------------
+            // AUTO-SCALING SYSTEM (Evitar que o texto ultrapasse a tela)
+            // ----------------------------------------------------------------
+            let fontSize = 75; // Tamanho padrão
             ctx.font = `bold ${fontSize}px ${config.font}`;
 
-            // Medir exatamente o tamanho letra a letra para kerning perfeito
+            // 1. Calcula a largura do conteúdo (Texto + Gap + Emoji) com o tamanho padrão
             let sumTextWidth = 0;
             for(let k = 0; k < opt.text.length; k++) {
                 sumTextWidth += ctx.measureText(opt.text[k]).width;
             }
-            const mainTextWidth = sumTextWidth;
-            const emojiWidth = ctx.measureText(opt.emoji).width;
-            const gap = 20;
-            const totalContentWidth = mainTextWidth + gap + emojiWidth;
+            let emojiWidth = ctx.measureText(opt.emoji).width;
+            let gap = 20;
+            let totalContentWidth = sumTextWidth + gap + emojiWidth;
 
-            const padX = 70;
-            const padY = 40;
+            // 2. A margem segura na tela de 1280px. 
+            // REDUZIDO PARA 55% da tela! Isso garante espaço para o "pulo" elástico da animação,
+            // as camadas fantasmas e o Glow, sem nunca bater nas bordas do vídeo.
+            const maxWidth = w * 0.55; 
+            
+            // Fator de Redução
+            let scaleFactor = 1;
+            if (totalContentWidth > maxWidth) {
+                scaleFactor = maxWidth / totalContentWidth;
+                
+                // Aplica a redução em todas as variáveis afetadas
+                fontSize = Math.floor(fontSize * scaleFactor);
+                ctx.font = `bold ${fontSize}px ${config.font}`; // Atualiza a fonte no Canvas
+                
+                // Recalcula tudo com a nova fonte menor
+                sumTextWidth = 0;
+                for(let k = 0; k < opt.text.length; k++) {
+                    sumTextWidth += ctx.measureText(opt.text[k]).width;
+                }
+                emojiWidth = ctx.measureText(opt.emoji).width;
+                gap = gap * scaleFactor;
+                totalContentWidth = sumTextWidth + gap + emojiWidth;
+            }
+
+            // Medidas finais da placa (Ajustadas proporcionalmente)
+            const padX = 70 * scaleFactor;
+            const padY = 40 * scaleFactor;
             const rectW = totalContentWidth + (padX * 2);
             const rectH = fontSize + (padY * 2);
 
             const totalLayers = 3; 
             
+            // RENDER DAS CAMADAS
             for (let i = totalLayers - 1; i >= 0; i--) {
                 const staggerDelay = i * 0.12; 
                 let layerProgress = 0;
                 
                 if (elapsed > 0) {
-                    // Normaliza o progresso para esta camada específica baseada no delay
                     const normalizedTime = (entryProgress - staggerDelay) / (1 - staggerDelay);
                     layerProgress = Math.max(0, Math.min(1, normalizedTime));
                 }
@@ -380,7 +403,6 @@
 
                 const easeValue = easeOutBack(layerProgress);
 
-                // Aplica Zoom de Entrada, Respiração Contínua, e o novo Zoom Out
                 const entryZoom = (elapsed < animState.duration) ? (0.2 + 0.8 * easeValue) : 1;
                 const finalZoom = entryZoom * floatZoom * exitScale;
 
@@ -393,7 +415,8 @@
                 const scaleY = Math.cos(angle);
                 
                 ctx.translate(0, pivotY);
-                const baseScale = 1 + (i * 0.08); 
+                // Reduzi a expansão das camadas de trás para que frases grandes não ultrapassem as bordas
+                const baseScale = 1 + (i * 0.05); 
                 ctx.scale(baseScale, scaleY * baseScale);
                 ctx.translate(0, -pivotY);
                 
@@ -407,29 +430,29 @@
 
                 if (isMainLayer) {
                     ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
-                    ctx.shadowBlur = 20;
-                    ctx.shadowOffsetY = 15;
+                    ctx.shadowBlur = 20 * scaleFactor;
+                    ctx.shadowOffsetY = 15 * scaleFactor;
                     ctx.filter = 'none';
                 } else {
                     ctx.shadowColor = config.color;
-                    ctx.shadowBlur = 80 + (i * 30); 
+                    ctx.shadowBlur = (80 + (i * 30)) * scaleFactor; 
                     ctx.shadowOffsetY = 0;
                     ctx.filter = `blur(${i * 6}px)`;
                 }
 
                 // 1. DESENHAR A PLACA
-                drawRoundRect(ctx, -rectW/2, -rectH/2, rectW, rectH, 12);
+                drawRoundRect(ctx, -rectW/2, -rectH/2, rectW, rectH, 12 * scaleFactor);
                 
                 if (isMainLayer) {
                     ctx.fillStyle = 'rgba(12, 12, 15, 0.9)';
                     ctx.fill();
-                    ctx.lineWidth = 4;
+                    ctx.lineWidth = 4 * scaleFactor;
                     ctx.strokeStyle = config.color;
                     ctx.stroke();
                 } else {
                     ctx.fillStyle = hexToRgba(config.color, 0.25);
                     ctx.fill();
-                    ctx.lineWidth = 6;
+                    ctx.lineWidth = 6 * scaleFactor;
                     ctx.strokeStyle = config.color;
                     ctx.stroke();
                 }
@@ -443,11 +466,11 @@
                 if (isMainLayer) {
                     ctx.fillStyle = '#FFE600'; 
                     ctx.shadowColor = hexToRgba(config.color, 0.9);
-                    ctx.shadowBlur = 40; 
+                    ctx.shadowBlur = 40 * scaleFactor; 
                 } else {
                     ctx.fillStyle = config.color;
                     ctx.shadowColor = config.color;
-                    ctx.shadowBlur = 60; 
+                    ctx.shadowBlur = 60 * scaleFactor; 
                 }
                 
                 ctx.textAlign = "center";
@@ -459,30 +482,25 @@
                     currentX += emojiWidth + gap;
                 }
 
-                // RENDERIZAR LETRA POR LETRA (Animação YouTube Moderna)
+                // RENDERIZAR LETRA POR LETRA
                 for (let k = 0; k < opt.text.length; k++) {
                     const char = opt.text[k];
                     const charW = ctx.measureText(char).width;
 
-                    // Atraso de cascata para cada letra aparecer (Pop-in)
                     let letterPop = 1;
                     if (elapsed < 2000) {
-                        const popStart = 150 + (k * 25); // Inicia após 150ms, 25ms por letra
+                        const popStart = 150 + (k * 25); 
                         const popElapsed = Math.max(0, elapsed - popStart);
                         const popProgress = Math.min(popElapsed / 300, 1);
                         letterPop = easeOutBack(popProgress);
                     }
 
-                    // Se a letra ainda não estourou, ignora para não perder frame
                     if (letterPop > 0.01) {
-                        // Onda Contínua para cima e para baixo
-                        const wave = Math.sin(timestamp * 0.006 + k * 0.4) * 4; 
-                        // Micro-rotação nas letras
+                        const wave = Math.sin(timestamp * 0.006 + k * 0.4) * (4 * scaleFactor); 
                         const rot = Math.sin(timestamp * 0.004 + k * 0.2) * 0.08; 
 
                         ctx.save();
-                        // Desloca para o centro exato da letra para aplicar rotação e escala perfeitamente
-                        ctx.translate(currentX + charW / 2, 4 + wave);
+                        ctx.translate(currentX + charW / 2, (4 * scaleFactor) + wave);
                         ctx.rotate(rot);
                         ctx.scale(letterPop, letterPop);
                         
@@ -490,13 +508,13 @@
                         ctx.restore();
                     }
                     
-                    currentX += charW; // Avança cursor de posicionamento
+                    currentX += charW; 
                 }
 
                 // EMOJI FINAL
                 if (opt.pos === "end") {
                     currentX += gap;
-                    drawAnimatedEmoji(ctx, opt.emoji, currentX + emojiWidth / 2, 4, opt.type, timestamp, elapsed);
+                    drawAnimatedEmoji(ctx, opt.emoji, currentX + emojiWidth / 2, 4 * scaleFactor, opt.type, timestamp, elapsed);
                 }
 
                 ctx.restore();
@@ -529,7 +547,6 @@
             recordUI.progress.style.transitionDuration = '8s'; 
             recordUI.progress.style.width = '100%';
 
-            // Dispara Animação do zero!
             animState.startTime = performance.now();
 
             const stream = canvas.captureStream(60);
@@ -569,7 +586,6 @@
 
             recordingState.recorder.start();
 
-            // Desliga aos 8 segundos exatos (Nessa altura o Zoom Out já ocorreu aos 7.3s e a tela estará limpa)
             setTimeout(() => {
                 if (recordingState.recorder.state === 'recording') {
                     recordingState.recorder.stop();
