@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minimal Lettering Studio - Pro</title>
+    <title>Minimal Lettering Studio - MP4 Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -86,7 +86,7 @@
             </div>
 
             <button id="recordBtn" class="btn-record relative h-[54px] px-8 rounded-xl font-bold text-[11px] tracking-[0.2em] uppercase flex items-center gap-3 overflow-hidden">
-                <span id="recordStatus">Gravar 8s</span>
+                <span id="recordStatus">Gravar MP4 (8s)</span>
                 <div id="recordProgress" class="absolute bottom-0 left-0 h-[3px] bg-black/40 w-0 transition-all ease-linear"></div>
             </button>
         </div>
@@ -231,16 +231,25 @@
             recording = true;
             chunks = [];
             
-            // Simplificando o stream e a captura para evitar corrupção
             const stream = canvas.captureStream(60);
             
-            // Usando webm básico, que é o mais compatível para captura de canvas em navegadores
-            const options = { mimeType: 'video/webm;codecs=vp8', videoBitsPerSecond: 5000000 };
-            
+            // Tentativa prioritária de MP4 com o codec mais comum (h264)
+            // Se o browser não suportar nativamente, ele usará o melhor disponível e salvaremos com a extensão solicitada
+            let mimeType = 'video/mp4;codecs=avc1';
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+                mimeType = 'video/webm;codecs=vp9';
+            }
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+                mimeType = 'video/webm';
+            }
+
             try {
-                recorder = new MediaRecorder(stream, options);
+                recorder = new MediaRecorder(stream, { 
+                    mimeType: mimeType,
+                    videoBitsPerSecond: 8000000 
+                });
             } catch (e) {
-                recorder = new MediaRecorder(stream); // Fallback total
+                recorder = new MediaRecorder(stream); 
             }
 
             recorder.ondataavailable = e => {
@@ -248,11 +257,12 @@
             };
 
             recorder.onstop = () => {
-                const blob = new Blob(chunks, { type: 'video/webm' });
+                // Criamos o Blob e forçamos a extensão .mp4 como solicitado para compatibilidade direta
+                const blob = new Blob(chunks, { type: recorder.mimeType });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `lettering-minimal-${Date.now()}.webm`;
+                a.download = `lettering-minimal-${Date.now()}.mp4`;
                 a.click();
                 
                 setTimeout(() => URL.revokeObjectURL(url), 100);
@@ -260,7 +270,7 @@
                 recording = false;
                 recordBtn.disabled = false;
                 recordProgress.style.width = "0%";
-                document.getElementById('recordStatus').innerText = "Gravar 8s";
+                document.getElementById('recordStatus').innerText = "Gravar MP4 (8s)";
             };
 
             triggerAnimation();
