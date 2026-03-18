@@ -121,7 +121,57 @@
             maxWidth: canvas.width * 0.85
         };
 
+        // Sistema de partículas para o alfabeto e números
+        const particles = [];
+        const alphabet = "abcdefghijklmnopqrstuvwxyz";
+        const numbers = "0123456789";
+
+        function createParticle(side) {
+            const isLeft = side === 'left';
+            return {
+                x: isLeft ? Math.random() * (canvas.width * 0.2) : canvas.width * 0.8 + Math.random() * (canvas.width * 0.2),
+                y: -50 - Math.random() * 500,
+                speed: 1 + Math.random() * 3,
+                value: isLeft ? alphabet[Math.floor(Math.random() * alphabet.length)] : numbers[Math.floor(Math.random() * numbers.length)],
+                opacity: 0.05 + Math.random() * 0.15,
+                fontSize: 16 + Math.random() * 24,
+                side: side
+            };
+        }
+
+        function initParticles() {
+            for (let i = 0; i < 40; i++) {
+                particles.push(createParticle('left'));
+                particles.push(createParticle('right'));
+            }
+        }
+
+        function updateParticles() {
+            particles.forEach(p => {
+                p.y += p.speed;
+                if (p.y > canvas.height + 50) {
+                    const newP = createParticle(p.side);
+                    p.y = newP.y;
+                    p.x = newP.x;
+                    p.value = newP.value;
+                    p.opacity = newP.opacity;
+                }
+            });
+        }
+
+        function drawParticles() {
+            ctx.save();
+            ctx.font = `600 24px ${config.fontFamily}`;
+            particles.forEach(p => {
+                ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity})`;
+                ctx.font = `600 ${p.fontSize}px ${config.fontFamily}`;
+                ctx.fillText(p.value, p.x, p.y);
+            });
+            ctx.restore();
+        }
+
         function init() {
+            initParticles();
             triggerAnimation();
             letteringSelect.addEventListener('change', triggerAnimation);
             replayBtn.addEventListener('click', triggerAnimation);
@@ -154,6 +204,10 @@
                 ctx.fillStyle = '#00ff00';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
+
+            // Atualizar e desenhar partículas de fundo
+            updateParticles();
+            drawParticles();
 
             ctx.font = `600 ${config.fontBaseSize}px ${config.fontFamily}`;
             let metrics = ctx.measureText(text);
