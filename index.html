@@ -1,132 +1,94 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estúdio de Letterings - Letras Dinâmicas (Auto-Scale)</title>
+    <title>Minimal Lettering Studio - Fix</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@600&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Grantha Sangam MN', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: #050505; 
-            color: #f8fafc;
-            overflow-x: hidden;
+            font-family: 'Golos Text', sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            overflow: hidden;
         }
         canvas {
-            border-radius: 8px;
-            box-shadow: 0 0 60px -5px rgba(255, 230, 0, 0.25);
-            transition: border 0.3s ease;
+            background-color: transparent;
         }
-        .bg-grid {
-            background-image: 
-                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-            background-size: 40px 40px;
-            background-color: #090909;
+        .control-panel {
+            background-color: #0a0a0a;
+            border: 1px solid #1a1a1a;
         }
-        .bg-green-screen {
-            background-color: #00ff00;
-            background-image: none;
+        select, input {
+            background-color: #000000;
+            border: 1px solid #222;
+            color: white;
+            transition: all 0.2s;
+        }
+        select:focus {
+            border-color: #555;
+            outline: none;
+        }
+        .btn-record {
+            background-color: #ffffff;
+            color: #000000;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-record:disabled {
+            background-color: #333;
+            color: #666;
+            cursor: not-allowed;
+        }
+        .bg-chroma {
+            background-color: #00ff00 !important;
         }
     </style>
 </head>
-<body class="min-h-screen p-6 md:p-12 flex flex-col items-center">
+<body class="min-h-screen flex flex-col items-center justify-center p-4 md:p-8">
 
-    <header class="text-center mb-8 w-full max-w-4xl">
-        <div class="inline-block border border-yellow-400/50 rounded px-4 py-1 mb-4 bg-yellow-400/10 shadow-[0_0_20px_rgba(255,230,0,0.4)]">
-            <span class="text-yellow-400 text-xs font-bold tracking-[0.3em] uppercase flex items-center gap-2">
-                <span class="w-2 h-2 rounded-sm bg-yellow-400 animate-pulse shadow-[0_0_10px_#ffe600]"></span>
-                Motion Design: Auto-Scale & Letras Vivas
-            </span>
+    <div class="w-full max-w-6xl flex flex-col gap-8">
+        <!-- Área Principal do Canvas -->
+        <div id="canvasContainer" class="relative w-full aspect-video flex items-center justify-center rounded-lg overflow-hidden border border-white/5 bg-black">
+            <canvas id="previewCanvas" width="1920" height="1080" class="w-full h-full object-contain"></canvas>
+            
+            <div class="absolute top-6 left-6 text-[10px] tracking-[0.4em] text-white/20 uppercase pointer-events-none">
+                Modo Preview • 1080p • 60fps
+            </div>
+
+            <button id="replayBtn" class="absolute bottom-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white/40 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            </button>
         </div>
-        <h1 class="text-4xl md:text-5xl font-black text-white mb-4 tracking-tighter uppercase drop-shadow-lg">
-            Letras <span class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500">Dinâmicas</span>
-        </h1>
-        <p class="text-slate-400 text-sm md:text-base tracking-wide max-w-2xl mx-auto">
-            Ajuste automático de tamanho: frases longas agora cabem na tela perfeitamente! Com animação de saída (Zoom Out) aos 8s.
-        </p>
-    </header>
 
-    <div class="flex flex-col xl:flex-row gap-8 w-full max-w-6xl">
-        <!-- Controles -->
-        <div class="w-full xl:w-1/3 bg-[#0f0f0f] border border-white/10 p-8 rounded-xl shadow-2xl flex flex-col gap-6 relative overflow-hidden">
-            <!-- Glow background do card de controle -->
-            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-yellow-500/20 blur-3xl rounded-full pointer-events-none transition-colors" id="controlGlow"></div>
-
-            <div class="relative z-10">
-                <label class="block text-xs font-bold mb-2 text-slate-400 uppercase tracking-[0.1em]">Texto do Lettering:</label>
-                <select id="letteringSelect" class="w-full bg-black/80 text-white rounded p-3 border border-white/20 focus:outline-none focus:border-yellow-400 transition-all font-semibold uppercase text-sm tracking-wide shadow-inner">
-                    <option value="0">Custo Oculto: O Tempo ⏳</option>
-                    <option value="1">Teoria vs. Prática 💡⚙️</option>
-                    <option value="2">Foco na Venda = Comissão 💰</option>
-                    <option value="3">📁 Estudo de Caso</option>
-                    <option value="4">Ouch! 💥</option>
-                    <option value="5">Desmotivação Imediata 📉</option>
-                    <option value="6">Não dá certo ❌ | Vai embora 👋</option>
-                    <option value="7">O Segredo: Tenha um Plano 📋</option>
-                    <option value="8">RH sempre no Radar 📡</option>
-                    <option value="9">A Grande Dica: TREINE DOIS 👥</option>
-                    <option value="10">Deixe nos comentários! 👇</option>
+        <!-- Controlos -->
+        <div class="control-panel p-6 rounded-2xl flex flex-col md:flex-row items-end gap-6">
+            <div class="flex-1 w-full">
+                <label class="block text-[10px] tracking-[0.2em] text-white/40 uppercase mb-3">Frase do Lettering</label>
+                <select id="letteringSelect" class="w-full p-4 rounded-xl text-sm font-medium">
+                    <option value="custo oculto: o tempo">custo oculto: o tempo</option>
+                    <option value="teoria vs. prática">teoria vs. prática</option>
+                    <option value="foco na venda = comissão">foco na venda = comissão</option>
+                    <option value="estudo de caso exclusivo">estudo de caso exclusivo</option>
+                    <option value="não dá certo | vai embora">não dá certo | vai embora</option>
+                    <option value="o segredo: tenha um plano">o segredo: tenha um plano</option>
+                    <option value="rh sempre no radar">rh sempre no radar</option>
+                    <option value="a grande dica: treine dois">a grande dica: treine dois</option>
+                    <option value="deixe nos comentários">deixe nos comentários</option>
                 </select>
             </div>
 
-            <div class="relative z-10">
-                <label class="block text-xs font-bold mb-3 text-slate-400 uppercase tracking-[0.1em]">Cor do Neon (Glow):</label>
-                <div class="flex gap-3 justify-between">
-                    <button class="w-10 h-10 rounded bg-[#FFE600] border-2 border-transparent focus:border-white color-btn transition-all hover:scale-110 shadow-[0_0_20px_rgba(255,230,0,0.8)]" data-color="#FFE600"></button>
-                    <button class="w-10 h-10 rounded bg-[#FF8C00] border-2 border-transparent focus:border-white color-btn transition-all hover:scale-110 shadow-[0_0_20px_rgba(255,140,0,0.8)]" data-color="#FF8C00"></button>
-                    <button class="w-10 h-10 rounded bg-[#E53935] border-2 border-transparent focus:border-white color-btn transition-all hover:scale-110 shadow-[0_0_20px_rgba(229,57,53,0.8)]" data-color="#E53935"></button>
-                    <button class="w-10 h-10 rounded bg-[#06b6d4] border-2 border-transparent focus:border-white color-btn transition-all hover:scale-110 shadow-[0_0_20px_rgba(6,182,212,0.8)]" data-color="#06b6d4"></button>
-                    <button class="w-10 h-10 rounded bg-[#a855f7] border-2 border-transparent focus:border-white color-btn transition-all hover:scale-110 shadow-[0_0_20px_rgba(168,85,247,0.8)]" data-color="#a855f7"></button>
-                    <button class="w-10 h-10 rounded bg-[#10b981] border-2 border-transparent focus:border-white color-btn transition-all hover:scale-110 shadow-[0_0_20px_rgba(16,185,129,0.8)]" data-color="#10b981"></button>
-                </div>
+            <div class="flex items-center gap-4 bg-black p-2 px-4 rounded-xl border border-white/5 h-[54px]">
+                <input type="checkbox" id="greenScreenToggle" class="w-4 h-4 rounded-full accent-white">
+                <label for="greenScreenToggle" class="text-[10px] tracking-widest text-white/60 uppercase cursor-pointer">Chroma Key</label>
             </div>
 
-            <div class="pt-6 border-t border-white/10 flex flex-col gap-3 mt-2 relative z-10">
-                
-                <div class="flex items-center gap-2 mb-2 bg-black/50 p-3 rounded border border-white/10">
-                    <input type="checkbox" id="greenScreenToggle" class="w-4 h-4 rounded text-yellow-400 bg-black border-white/20 focus:ring-yellow-400 focus:ring-offset-black" checked>
-                    <label for="greenScreenToggle" class="text-xs font-bold text-slate-300 uppercase tracking-wide cursor-pointer flex-1">
-                        Fundo Verde (Chroma Key)
-                    </label>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold mb-2 text-slate-400 uppercase tracking-[0.1em]">Formato de Exportação:</label>
-                    <select id="formatSelect" class="w-full bg-black/80 text-white rounded p-3 border border-white/10 focus:outline-none focus:border-yellow-400 transition-all font-semibold text-sm">
-                        <option value="mp4">Vídeo MP4 (.mp4)</option>
-                        <option value="webm">Vídeo WebM (.webm)</option>
-                    </select>
-                </div>
-                
-                <button id="recordBtn" class="w-full bg-yellow-400 text-black hover:bg-yellow-300 font-bold py-4 px-4 rounded shadow-[0_0_35px_rgba(255,230,0,0.6)] transition-all transform hover:scale-[1.02] flex justify-center items-center gap-2 relative overflow-hidden mt-2 border border-yellow-300">
-                    <span id="recordText" class="flex items-center gap-2 text-sm uppercase tracking-widest font-black">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                        GRAVAR ANIMAÇÃO (8s)
-                    </span>
-                    <div id="recordProgress" class="absolute bottom-0 left-0 h-1.5 bg-white w-0 transition-all ease-linear shadow-[0_0_10px_white]"></div>
-                </button>
-            </div>
-        </div>
-
-        <!-- Preview Area -->
-        <div class="w-full xl:w-2/3 flex flex-col items-center relative">
-            <div id="canvasContainer" class="w-full bg-grid border border-white/10 rounded p-1 flex flex-col items-center justify-center relative overflow-hidden shadow-[0_0_60px_rgba(0,0,0,0.9)] aspect-[16/9] md:aspect-auto md:h-[450px]">
-                
-                <div class="absolute top-4 right-4 z-10">
-                    <button id="replayBtn" class="bg-black/60 hover:bg-white text-white hover:text-black text-xs font-bold py-2 px-4 rounded transition-all tracking-widest uppercase border border-white/20 flex items-center gap-2 backdrop-blur-sm shadow-lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                        REPRODUZIR CENA
-                    </button>
-                </div>
-                
-                <canvas id="previewCanvas" width="1280" height="720" class="max-w-full h-auto rounded shadow-none bg-transparent"></canvas>
-            </div>
-            
-            <p class="mt-4 text-xs text-slate-500 text-center flex items-center gap-2 uppercase tracking-wide font-bold">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                Auto-Resizing • Zoom Out na Saída • 8 Segundos
-            </p>
+            <button id="recordBtn" class="btn-record relative h-[54px] px-8 rounded-xl font-bold text-[11px] tracking-[0.2em] uppercase flex items-center gap-3 overflow-hidden">
+                <span id="recordStatus">Gravar 8s</span>
+                <div id="recordProgress" class="absolute bottom-0 left-0 h-[3px] bg-black/40 w-0 transition-all ease-linear"></div>
+            </button>
         </div>
     </div>
 
@@ -134,467 +96,213 @@
         const canvas = document.getElementById('previewCanvas');
         const ctx = canvas.getContext('2d');
         const container = document.getElementById('canvasContainer');
-        const controlGlow = document.getElementById('controlGlow');
-        
-        const inputs = {
-            lettering: document.getElementById('letteringSelect'),
-            greenScreen: document.getElementById('greenScreenToggle'),
-            format: document.getElementById('formatSelect')
-        };
-        
-        const btns = {
-            record: document.getElementById('recordBtn'),
-            replay: document.getElementById('replayBtn'),
-            colors: document.querySelectorAll('.color-btn')
-        };
-
-        const recordUI = {
-            text: document.getElementById('recordText'),
-            progress: document.getElementById('recordProgress')
-        };
-
-        let config = {
-            color: '#FFE600',
-            font: "'Grantha Sangam MN', sans-serif"
-        };
-
-        const letteringConfig = [
-            { text: "CUSTO OCULTO: O TEMPO", emoji: "⏳", type: "spin", pos: "end" },
-            { text: "TEORIA VS. PRÁTICA", emoji: "💡⚙️", type: "pulse", pos: "end" },
-            { text: "FOCO NA VENDA = COMISSÃO", emoji: "💰", type: "bounce", pos: "end" }, // <--- Esta era longa
-            { text: "ESTUDO DE CASO", emoji: "📁", type: "wiggle", pos: "start" },
-            { text: "OUCH!", emoji: "💥", type: "pulse", pos: "end" },
-            { text: "DESMOTIVAÇÃO IMEDIATA", emoji: "📉", type: "wiggle", pos: "end" },
-            { text: "NÃO DÁ CERTO ❌ | VAI EMBORA", emoji: "👋", type: "bounce", pos: "end" }, // <--- E esta também
-            { text: "O SEGREDO: TENHA UM PLANO", emoji: "📋", type: "wiggle", pos: "end" },
-            { text: "RH SEMPRE NO RADAR", emoji: "📡", type: "pulse", pos: "end" },
-            { text: "A GRANDE DICA: TREINE DOIS", emoji: "👥", type: "bounce", pos: "end" },
-            { text: "DEIXE NOS COMENTÁRIOS!", emoji: "👇", type: "bounce", pos: "end" }
-        ];
+        const letteringSelect = document.getElementById('letteringSelect');
+        const greenScreenToggle = document.getElementById('greenScreenToggle');
+        const recordBtn = document.getElementById('recordBtn');
+        const replayBtn = document.getElementById('replayBtn');
+        const recordProgress = document.getElementById('recordProgress');
 
         let animState = {
-            active: false,
-            startTime: null,
-            duration: 1600, // Duração da entrada (Placa 3D)
-            currentTime: 0
+            startTime: performance.now(),
+            active: true
         };
 
-        let recordingState = {
-            active: false,
-            recorder: null,
-            chunks: []
+        let recording = false;
+
+        const config = {
+            fontBaseSize: 130,
+            fontFamily: "'Golos Text', sans-serif",
+            color: "#FFFFFF",
+            maxWidth: canvas.width * 0.85
         };
 
         function init() {
-            updateColorUI();
+            triggerAnimation();
             
-            inputs.lettering.addEventListener('change', () => triggerAnimation());
-            inputs.greenScreen.addEventListener('change', (e) => {
-                container.classList.toggle('bg-grid', !e.target.checked);
-                container.classList.toggle('bg-green-screen', e.target.checked);
-                drawFrame(performance.now());
+            letteringSelect.addEventListener('change', triggerAnimation);
+            replayBtn.addEventListener('click', triggerAnimation);
+            greenScreenToggle.addEventListener('change', () => {
+                container.classList.toggle('bg-chroma', greenScreenToggle.checked);
             });
             
-            btns.replay.addEventListener('click', () => triggerAnimation());
-            btns.record.addEventListener('click', startRecording);
+            recordBtn.addEventListener('click', startRecording);
 
-            btns.colors.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    config.color = e.target.dataset.color;
-                    updateColorUI();
-                    triggerAnimation();
-                });
-            });
-
-            if(inputs.greenScreen.checked) {
-                container.classList.remove('bg-grid');
-                container.classList.add('bg-green-screen');
-            }
-
-            requestAnimationFrame(renderLoop);
-            setTimeout(triggerAnimation, 300); 
-        }
-
-        function hexToRgba(hex, alpha) {
-            const r = parseInt(hex.slice(1, 3), 16);
-            const g = parseInt(hex.slice(3, 5), 16);
-            const b = parseInt(hex.slice(5, 7), 16);
-            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-        }
-
-        function updateColorUI() {
-            controlGlow.style.backgroundColor = hexToRgba(config.color, 0.25);
-            btns.record.style.backgroundColor = config.color;
-            btns.record.style.color = (config.color === '#FFFFFF' || config.color === '#FFE600') ? '#000000' : '#FFFFFF';
-            btns.record.style.boxShadow = `0 0 35px ${hexToRgba(config.color, 0.6)}`;
-            
-            btns.colors.forEach(b => {
-                b.style.borderColor = b.dataset.color === config.color ? 'white' : 'transparent';
-                if(b.dataset.color === config.color) {
-                    b.classList.add('scale-110', 'ring-2', 'ring-white/50', 'ring-offset-2', 'ring-offset-black');
-                } else {
-                    b.classList.remove('scale-110', 'ring-2', 'ring-white/50', 'ring-offset-2', 'ring-offset-black');
-                }
-            });
-        }
-
-        // Curvas de Animação
-        function easeOutBack(x) {
-            const c1 = 1.70158;
-            const c3 = c1 + 1;
-            return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
-        }
-
-        function easeInBack(x) {
-            const c1 = 1.70158;
-            const c3 = c1 + 1;
-            return c3 * x * x * x - c1 * x * x;
+            requestAnimationFrame(render);
         }
 
         function triggerAnimation() {
-            animState.active = true;
             animState.startTime = performance.now();
         }
 
-        function renderLoop(timestamp) {
-            animState.currentTime = timestamp;
-            drawFrame(timestamp);
-            requestAnimationFrame(renderLoop); 
+        function easeOutQuart(x) {
+            return 1 - Math.pow(1 - x, 4);
         }
 
-        function drawRoundRect(ctx, x, y, width, height, radius) {
-            ctx.beginPath();
-            ctx.moveTo(x + radius, y);
-            ctx.lineTo(x + width - radius, y);
-            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-            ctx.lineTo(x + width, y + height - radius);
-            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-            ctx.lineTo(x + radius, y + height);
-            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-            ctx.lineTo(x, y + radius);
-            ctx.quadraticCurveTo(x, y, x + radius, y);
-            ctx.closePath();
+        function easeInQuart(x) {
+            return x * x * x * x;
         }
 
-        // Renderiza e Anima Emojis
-        function drawAnimatedEmoji(ctx, emoji, x, y, type, timestamp, animElapsed) {
+        function render(timestamp) {
+            const elapsed = timestamp - animState.startTime;
+            // Garante que o texto está sempre em minúsculas
+            const text = letteringSelect.value.toLowerCase();
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (greenScreenToggle.checked) {
+                ctx.fillStyle = '#00ff00';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // Cálculo de Escala Automática
+            ctx.font = `600 ${config.fontBaseSize}px ${config.fontFamily}`;
+            let metrics = ctx.measureText(text);
+            let fontSize = config.fontBaseSize;
+            
+            if (metrics.width > config.maxWidth) {
+                const ratio = config.maxWidth / metrics.width;
+                fontSize = Math.floor(config.fontBaseSize * ratio);
+                ctx.font = `600 ${fontSize}px ${config.fontFamily}`;
+            }
+
+            const entryDuration = 1400;
+            const exitStart = 7200;
+            const exitDuration = 700;
+
+            let sceneScale = 1;
+            let sceneOpacity = 1;
+
+            if (elapsed < entryDuration) {
+                const p = elapsed / entryDuration;
+                sceneScale = 0.96 + (0.04 * easeOutQuart(p));
+                sceneOpacity = Math.min(p * 1.5, 1);
+            } 
+            else if (elapsed < exitStart) {
+                // Respiração subtil para manter o "clean" mas dinâmico
+                sceneScale = 1 + Math.sin(timestamp / 2500) * 0.003;
+            }
+            else {
+                const p = Math.min((elapsed - exitStart) / exitDuration, 1);
+                sceneScale = 1 - (0.15 * easeInQuart(p));
+                sceneOpacity = 1 - p;
+            }
+
+            if (sceneOpacity > 0) {
+                drawLettering(text, canvas.width / 2, canvas.height / 2, sceneScale, sceneOpacity, elapsed, fontSize);
+            }
+
+            requestAnimationFrame(render);
+        }
+
+        function drawLettering(text, x, y, scale, opacity, elapsed, fontSize) {
             ctx.save();
             ctx.translate(x, y);
+            ctx.scale(scale, scale);
+            ctx.globalAlpha = opacity;
+            
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = config.color;
 
-            // Pop-in do Emoji
-            let popScale = 1;
-            if (animElapsed < 2500) {
-                const popElapsed = Math.max(0, animElapsed - 400); 
-                const popProgress = Math.min(popElapsed / 500, 1);
-                popScale = easeOutBack(popProgress);
-            }
-            ctx.scale(popScale, popScale);
+            const chars = text.split('');
+            const totalWidth = ctx.measureText(text).width;
+            let currentX = -totalWidth / 2;
 
-            if (popScale > 0.01) {
-                if (type === "spin") {
-                    ctx.rotate(timestamp * 0.003); 
-                } else if (type === "bounce") {
-                    ctx.translate(0, Math.sin(timestamp * 0.008) * 12);
-                } else if (type === "pulse") {
-                    const s = 1 + Math.sin(timestamp * 0.006) * 0.25;
-                    ctx.scale(s, s);
-                } else if (type === "wiggle") {
-                    ctx.rotate(Math.sin(timestamp * 0.006) * 0.35);
-                }
-            }
+            chars.forEach((char, i) => {
+                const charWidth = ctx.measureText(char).width;
+                const charCenter = currentX + charWidth / 2;
+                
+                // Entrada escalonada por letra
+                const letterDelay = i * 35;
+                const letterElapsed = Math.max(0, (elapsed) - letterDelay);
+                const letterProgress = Math.min(letterElapsed / 900, 1);
+                const ease = easeOutQuart(letterProgress);
 
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(emoji, 0, 0);
+                ctx.save();
+                // Deslocamento vertical suave na entrada
+                const yOffset = (1 - ease) * 15;
+                ctx.translate(charCenter, yOffset);
+                ctx.globalAlpha = opacity * letterProgress;
+                
+                ctx.fillText(char, 0, 0);
+                ctx.restore();
+
+                currentX += charWidth;
+            });
+
             ctx.restore();
         }
 
-        // --- CORE RENDER ---
-        function drawFrame(timestamp) {
-            const opt = letteringConfig[inputs.lettering.selectedIndex];
-            const w = canvas.width;
-            const h = canvas.height;
-
-            ctx.clearRect(0, 0, w, h);
+        async function startRecording() {
+            if (recording) return;
+            recording = true;
             
-            if (inputs.greenScreen.checked) {
-                ctx.fillStyle = '#00ff00';
-                ctx.fillRect(0, 0, w, h);
-            }
-
-            // Temporização
-            let elapsed = 0;
-            if (animState.startTime) {
-                elapsed = timestamp - animState.startTime;
-            }
-
-            const entryProgress = Math.min(elapsed / animState.duration, 1);
-            
-            // Lógica de Zoom Out
-            let exitScale = 1;
-            if (elapsed > 7300) {
-                const exitProgress = Math.min((elapsed - 7300) / 400, 1);
-                exitScale = Math.max(0, 1 - easeInBack(exitProgress)); 
-            }
-
-            if (exitScale <= 0.01) return;
-
-            const floatY = Math.sin(timestamp / 500) * 8;
-            const floatZoom = 1 + Math.sin(timestamp / 600) * 0.04;
-            
-            // ----------------------------------------------------------------
-            // AUTO-SCALING SYSTEM (Evitar que o texto ultrapasse a tela)
-            // ----------------------------------------------------------------
-            let fontSize = 75; // Tamanho padrão
-            ctx.font = `bold ${fontSize}px ${config.font}`;
-
-            // 1. Calcula a largura do conteúdo (Texto + Gap + Emoji) com o tamanho padrão
-            let sumTextWidth = 0;
-            for(let k = 0; k < opt.text.length; k++) {
-                sumTextWidth += ctx.measureText(opt.text[k]).width;
-            }
-            let emojiWidth = ctx.measureText(opt.emoji).width;
-            let gap = 20;
-            let totalContentWidth = sumTextWidth + gap + emojiWidth;
-
-            // 2. A margem segura na tela de 1280px. 
-            // REDUZIDO PARA 55% da tela! Isso garante espaço para o "pulo" elástico da animação,
-            // as camadas fantasmas e o Glow, sem nunca bater nas bordas do vídeo.
-            const maxWidth = w * 0.55; 
-            
-            // Fator de Redução
-            let scaleFactor = 1;
-            if (totalContentWidth > maxWidth) {
-                scaleFactor = maxWidth / totalContentWidth;
-                
-                // Aplica a redução em todas as variáveis afetadas
-                fontSize = Math.floor(fontSize * scaleFactor);
-                ctx.font = `bold ${fontSize}px ${config.font}`; // Atualiza a fonte no Canvas
-                
-                // Recalcula tudo com a nova fonte menor
-                sumTextWidth = 0;
-                for(let k = 0; k < opt.text.length; k++) {
-                    sumTextWidth += ctx.measureText(opt.text[k]).width;
-                }
-                emojiWidth = ctx.measureText(opt.emoji).width;
-                gap = gap * scaleFactor;
-                totalContentWidth = sumTextWidth + gap + emojiWidth;
-            }
-
-            // Medidas finais da placa (Ajustadas proporcionalmente)
-            const padX = 70 * scaleFactor;
-            const padY = 40 * scaleFactor;
-            const rectW = totalContentWidth + (padX * 2);
-            const rectH = fontSize + (padY * 2);
-
-            const totalLayers = 3; 
-            
-            // RENDER DAS CAMADAS
-            for (let i = totalLayers - 1; i >= 0; i--) {
-                const staggerDelay = i * 0.12; 
-                let layerProgress = 0;
-                
-                if (elapsed > 0) {
-                    const normalizedTime = (entryProgress - staggerDelay) / (1 - staggerDelay);
-                    layerProgress = Math.max(0, Math.min(1, normalizedTime));
-                }
-
-                if (layerProgress <= 0) continue;
-
-                const easeValue = easeOutBack(layerProgress);
-
-                const entryZoom = (elapsed < animState.duration) ? (0.2 + 0.8 * easeValue) : 1;
-                const finalZoom = entryZoom * floatZoom * exitScale;
-
-                ctx.save();
-                ctx.translate(w / 2, h / 2 + floatY);
-                ctx.scale(finalZoom, finalZoom);
-                
-                const pivotY = rectH / 2;
-                const angle = (Math.PI / 2) * (1 - easeValue);
-                const scaleY = Math.cos(angle);
-                
-                ctx.translate(0, pivotY);
-                // Reduzi a expansão das camadas de trás para que frases grandes não ultrapassem as bordas
-                const baseScale = 1 + (i * 0.05); 
-                ctx.scale(baseScale, scaleY * baseScale);
-                ctx.translate(0, -pivotY);
-                
-                const isMainLayer = (i === 0);
-                
-                ctx.globalAlpha = isMainLayer ? 1 : 0.4 - (i * 0.1);
-                
-                if (!isMainLayer && !inputs.greenScreen.checked) {
-                    ctx.globalCompositeOperation = 'lighter'; 
-                }
-
-                if (isMainLayer) {
-                    ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
-                    ctx.shadowBlur = 20 * scaleFactor;
-                    ctx.shadowOffsetY = 15 * scaleFactor;
-                    ctx.filter = 'none';
-                } else {
-                    ctx.shadowColor = config.color;
-                    ctx.shadowBlur = (80 + (i * 30)) * scaleFactor; 
-                    ctx.shadowOffsetY = 0;
-                    ctx.filter = `blur(${i * 6}px)`;
-                }
-
-                // 1. DESENHAR A PLACA
-                drawRoundRect(ctx, -rectW/2, -rectH/2, rectW, rectH, 12 * scaleFactor);
-                
-                if (isMainLayer) {
-                    ctx.fillStyle = 'rgba(12, 12, 15, 0.9)';
-                    ctx.fill();
-                    ctx.lineWidth = 4 * scaleFactor;
-                    ctx.strokeStyle = config.color;
-                    ctx.stroke();
-                } else {
-                    ctx.fillStyle = hexToRgba(config.color, 0.25);
-                    ctx.fill();
-                    ctx.lineWidth = 6 * scaleFactor;
-                    ctx.strokeStyle = config.color;
-                    ctx.stroke();
-                }
-
-                // 2. DESENHAR LETRAS DINÂMICAS & EMOJIS
-                ctx.shadowColor = 'transparent'; 
-                ctx.shadowBlur = 0;
-                
-                let currentX = -totalContentWidth / 2;
-                
-                if (isMainLayer) {
-                    ctx.fillStyle = '#FFE600'; 
-                    ctx.shadowColor = hexToRgba(config.color, 0.9);
-                    ctx.shadowBlur = 40 * scaleFactor; 
-                } else {
-                    ctx.fillStyle = config.color;
-                    ctx.shadowColor = config.color;
-                    ctx.shadowBlur = 60 * scaleFactor; 
-                }
-                
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-
-                // EMOJI INICIAL
-                if (opt.pos === "start") {
-                    drawAnimatedEmoji(ctx, opt.emoji, currentX + emojiWidth / 2, 0, opt.type, timestamp, elapsed);
-                    currentX += emojiWidth + gap;
-                }
-
-                // RENDERIZAR LETRA POR LETRA
-                for (let k = 0; k < opt.text.length; k++) {
-                    const char = opt.text[k];
-                    const charW = ctx.measureText(char).width;
-
-                    let letterPop = 1;
-                    if (elapsed < 2000) {
-                        const popStart = 150 + (k * 25); 
-                        const popElapsed = Math.max(0, elapsed - popStart);
-                        const popProgress = Math.min(popElapsed / 300, 1);
-                        letterPop = easeOutBack(popProgress);
-                    }
-
-                    if (letterPop > 0.01) {
-                        const wave = Math.sin(timestamp * 0.006 + k * 0.4) * (4 * scaleFactor); 
-                        const rot = Math.sin(timestamp * 0.004 + k * 0.2) * 0.08; 
-
-                        ctx.save();
-                        ctx.translate(currentX + charW / 2, (4 * scaleFactor) + wave);
-                        ctx.rotate(rot);
-                        ctx.scale(letterPop, letterPop);
-                        
-                        ctx.fillText(char, 0, 0);
-                        ctx.restore();
-                    }
-                    
-                    currentX += charW; 
-                }
-
-                // EMOJI FINAL
-                if (opt.pos === "end") {
-                    currentX += gap;
-                    drawAnimatedEmoji(ctx, opt.emoji, currentX + emojiWidth / 2, 4 * scaleFactor, opt.type, timestamp, elapsed);
-                }
-
-                ctx.restore();
-            }
-        }
-
-        // --- GRAVAÇÃO (MP4 / WEBM) ---
-        function startRecording() {
-            if (recordingState.active) return;
-            
-            const format = inputs.format.value;
-            let mimeTypeToUse = '';
-            let extension = '';
-
-            if (format === 'mp4') {
-                mimeTypeToUse = 'video/mp4;codecs=avc1'; 
-                extension = 'mp4';
-            } else {
-                mimeTypeToUse = 'video/webm;codecs=vp9';
-                extension = 'webm';
-            }
-
-            recordingState.active = true;
-            recordingState.chunks = [];
-            
-            btns.record.style.backgroundColor = '#dc2626'; 
-            btns.record.style.boxShadow = '0 0 40px rgba(220, 38, 38, 0.8)';
-            
-            recordUI.text.innerHTML = '🔴 GRAVANDO 60FPS...';
-            recordUI.progress.style.transitionDuration = '8s'; 
-            recordUI.progress.style.width = '100%';
-
-            animState.startTime = performance.now();
-
+            const chunks = [];
+            // Captura o stream do canvas a 60fps
             const stream = canvas.captureStream(60);
             
+            // Verificação de tipos suportados para evitar ficheiros corrompidos
+            const types = [
+                'video/webm;codecs=vp9,opus',
+                'video/webm;codecs=vp8,opus',
+                'video/webm;codecs=h264,opus',
+                'video/webm',
+                'video/mp4'
+            ];
+            
+            let selectedType = types.find(t => MediaRecorder.isTypeSupported(t)) || '';
+
             try {
-                recordingState.recorder = new MediaRecorder(stream, { mimeType: mimeTypeToUse, videoBitsPerSecond: 8000000 }); 
-            } catch (e) {
-                try {
-                    recordingState.recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=h264', videoBitsPerSecond: 8000000 });
-                    extension = 'webm'; 
-                } catch (err) {
-                    recordingState.recorder = new MediaRecorder(stream);
-                    extension = 'webm';
-                }
-            }
+                const recorder = new MediaRecorder(stream, {
+                    mimeType: selectedType,
+                    videoBitsPerSecond: 8000000 // 8Mbps para estabilidade
+                });
 
-            recordingState.recorder.ondataavailable = e => {
-                if (e.data.size > 0) recordingState.chunks.push(e.data);
-            };
+                recorder.ondataavailable = e => {
+                    if (e.data.size > 0) chunks.push(e.data);
+                };
 
-            recordingState.recorder.onstop = () => {
-                const blob = new Blob(recordingState.chunks, { type: recordingState.recorder.mimeType || 'video/webm' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `Lettering_Moderno_${Date.now()}.${extension}`;
-                a.click();
-                URL.revokeObjectURL(url);
+                recorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: selectedType || 'video/webm' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    // Define extensão baseada no mimeType
+                    const ext = selectedType.includes('mp4') ? 'mp4' : 'webm';
+                    a.download = `lettering-minimal-${Date.now()}.${ext}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    
+                    setTimeout(() => URL.revokeObjectURL(url), 100);
+                    
+                    recording = false;
+                    recordBtn.disabled = false;
+                    recordProgress.style.width = "0%";
+                    document.getElementById('recordStatus').innerText = "Gravar 8s";
+                };
 
-                recordingState.active = false;
+                triggerAnimation();
+                recorder.start();
                 
-                updateColorUI();
-                recordUI.text.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg> GRAVAR ANIMAÇÃO (8s)`;
-                recordUI.progress.style.transitionDuration = '0s';
-                recordUI.progress.style.width = '0%';
-            };
+                recordBtn.disabled = true;
+                document.getElementById('recordStatus').innerText = "A gravar...";
+                recordProgress.style.transition = "width 8s linear";
+                recordProgress.style.width = "100%";
 
-            recordingState.recorder.start();
+                setTimeout(() => {
+                    if(recorder.state !== 'inactive') recorder.stop();
+                }, 8000);
 
-            setTimeout(() => {
-                if (recordingState.recorder.state === 'recording') {
-                    recordingState.recorder.stop();
-                }
-            }, 8000);
+            } catch (err) {
+                console.error("Erro ao iniciar gravação:", err);
+                recording = false;
+                recordBtn.disabled = false;
+                alert("O seu navegador não suporta a gravação direta de vídeo.");
+            }
         }
 
-        window.addEventListener('load', init);
-
+        window.onload = init;
     </script>
 </body>
 </html>
