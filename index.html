@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minimal Lettering Studio - MP4 Edition</title>
+    <title>Minimal Lettering Studio - Gestão de Estoque</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -55,7 +55,7 @@
             <canvas id="previewCanvas" width="1920" height="1080" class="w-full h-full object-contain"></canvas>
             
             <div class="absolute top-6 left-6 text-[10px] tracking-[0.4em] text-white/20 uppercase pointer-events-none">
-                Preview Mode • 1080p • 60fps
+                Estoque Mode • 1080p • 60fps
             </div>
 
             <button id="replayBtn" class="absolute bottom-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white/40 transition-all">
@@ -66,17 +66,20 @@
         <!-- Controlos -->
         <div class="control-panel p-6 rounded-2xl flex flex-col md:flex-row items-end gap-6">
             <div class="flex-1 w-full">
-                <label class="block text-[10px] tracking-[0.2em] text-white/40 uppercase mb-3">Frase do Lettering</label>
+                <label class="block text-[10px] tracking-[0.2em] text-white/40 uppercase mb-3">Frase (Gestão de Estoque)</label>
                 <select id="letteringSelect" class="w-full p-4 rounded-xl text-sm font-medium">
-                    <option value="custo oculto: o tempo">custo oculto: o tempo</option>
-                    <option value="teoria vs. prática">teoria vs. prática</option>
-                    <option value="foco na venda = comissão">foco na venda = comissão</option>
-                    <option value="estudo de caso exclusivo">estudo de caso exclusivo</option>
-                    <option value="não dá certo | vai embora">não dá certo | vai embora</option>
-                    <option value="o segredo: tenha um plano">o segredo: tenha um plano</option>
-                    <option value="rh sempre no radar">rh sempre no radar</option>
-                    <option value="a grande dica: treine dois">a grande dica: treine dois</option>
-                    <option value="deixe nos comentários">deixe nos comentários</option>
+                    <option value="+5000 sem endereçamento?">+5000 sem endereçamento?</option>
+                    <option value="difícil de encontrar?">difícil de encontrar?</option>
+                    <option value="o segredo: endereçamento">o segredo: endereçamento</option>
+                    <option value="método alfanumérico">método alfanumérico</option>
+                    <option value="usado pelas gigantes">usado pelas gigantes</option>
+                    <option value="aprende em 20 minutos">aprende em 20 minutos</option>
+                    <option value="pare de perder tempo!">pare de perder tempo!</option>
+                    <option value="vendedor tem que vender">vendedor tem que vender</option>
+                    <option value="bairros, ruas e prédios">bairros, ruas e prédios</option>
+                    <option value="regra: mesma direção">regra: mesma direção</option>
+                    <option value="já usa na sua loja?">já usa na sua loja?</option>
+                    <option value="clique no link abaixo!">clique no link abaixo!</option>
                 </select>
             </div>
 
@@ -86,7 +89,7 @@
             </div>
 
             <button id="recordBtn" class="btn-record relative h-[54px] px-8 rounded-xl font-bold text-[11px] tracking-[0.2em] uppercase flex items-center gap-3 overflow-hidden">
-                <span id="recordStatus">Gravar MP4 (8s)</span>
+                <span id="recordStatus">Gravar MP4 (5s)</span>
                 <div id="recordProgress" class="absolute bottom-0 left-0 h-[3px] bg-black/40 w-0 transition-all ease-linear"></div>
             </button>
         </div>
@@ -162,9 +165,9 @@
                 ctx.font = `600 ${fontSize}px ${config.fontFamily}`;
             }
 
-            const entryDuration = 1400;
-            const exitStart = 7200;
-            const exitDuration = 700;
+            const entryDuration = 1200;
+            const exitStart = 4300; 
+            const exitDuration = 600;
 
             let sceneScale = 1;
             let sceneOpacity = 1;
@@ -208,9 +211,9 @@
                 const charWidth = ctx.measureText(char).width;
                 const charCenter = currentX + charWidth / 2;
                 
-                const letterDelay = i * 35;
+                const letterDelay = i * 30;
                 const letterElapsed = Math.max(0, elapsed - letterDelay);
-                const letterProgress = Math.min(letterElapsed / 900, 1);
+                const letterProgress = Math.min(letterElapsed / 800, 1);
                 const ease = easeOutQuart(letterProgress);
 
                 ctx.save();
@@ -233,8 +236,6 @@
             
             const stream = canvas.captureStream(60);
             
-            // Tentativa prioritária de MP4 com o codec mais comum (h264)
-            // Se o browser não suportar nativamente, ele usará o melhor disponível e salvaremos com a extensão solicitada
             let mimeType = 'video/mp4;codecs=avc1';
             if (!MediaRecorder.isTypeSupported(mimeType)) {
                 mimeType = 'video/webm;codecs=vp9';
@@ -257,12 +258,11 @@
             };
 
             recorder.onstop = () => {
-                // Criamos o Blob e forçamos a extensão .mp4 como solicitado para compatibilidade direta
                 const blob = new Blob(chunks, { type: recorder.mimeType });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `lettering-minimal-${Date.now()}.mp4`;
+                a.download = `lettering-estoque-${Date.now()}.mp4`;
                 a.click();
                 
                 setTimeout(() => URL.revokeObjectURL(url), 100);
@@ -270,7 +270,7 @@
                 recording = false;
                 recordBtn.disabled = false;
                 recordProgress.style.width = "0%";
-                document.getElementById('recordStatus').innerText = "Gravar MP4 (8s)";
+                document.getElementById('recordStatus').innerText = "Gravar MP4 (5s)";
             };
 
             triggerAnimation();
@@ -278,14 +278,14 @@
             
             recordBtn.disabled = true;
             document.getElementById('recordStatus').innerText = "A gravar...";
-            recordProgress.style.transition = "width 8s linear";
+            recordProgress.style.transition = "width 5s linear";
             recordProgress.style.width = "100%";
 
             setTimeout(() => {
                 if(recorder && recorder.state === 'recording') {
                     recorder.stop();
                 }
-            }, 8000);
+            }, 5000);
         }
 
         window.onload = init;
