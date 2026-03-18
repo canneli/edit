@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minimal Lettering Studio - Fix</title>
+    <title>Minimal Lettering Studio - Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -55,7 +55,7 @@
             <canvas id="previewCanvas" width="1920" height="1080" class="w-full h-full object-contain"></canvas>
             
             <div class="absolute top-6 left-6 text-[10px] tracking-[0.4em] text-white/20 uppercase pointer-events-none">
-                Modo Preview • 1080p • 60fps
+                Preview Mode • 1080p • 60fps
             </div>
 
             <button id="replayBtn" class="absolute bottom-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white/40 transition-all">
@@ -108,6 +108,8 @@
         };
 
         let recording = false;
+        let recorder = null;
+        let chunks = [];
 
         const config = {
             fontBaseSize: 130,
@@ -118,15 +120,12 @@
 
         function init() {
             triggerAnimation();
-            
             letteringSelect.addEventListener('change', triggerAnimation);
             replayBtn.addEventListener('click', triggerAnimation);
             greenScreenToggle.addEventListener('change', () => {
                 container.classList.toggle('bg-chroma', greenScreenToggle.checked);
             });
-            
             recordBtn.addEventListener('click', startRecording);
-
             requestAnimationFrame(render);
         }
 
@@ -144,7 +143,6 @@
 
         function render(timestamp) {
             const elapsed = timestamp - animState.startTime;
-            // Garante que o texto está sempre em minúsculas
             const text = letteringSelect.value.toLowerCase();
             
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -154,7 +152,6 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
-            // Cálculo de Escala Automática
             ctx.font = `600 ${config.fontBaseSize}px ${config.fontFamily}`;
             let metrics = ctx.measureText(text);
             let fontSize = config.fontBaseSize;
@@ -178,7 +175,6 @@
                 sceneOpacity = Math.min(p * 1.5, 1);
             } 
             else if (elapsed < exitStart) {
-                // Respiração subtil para manter o "clean" mas dinâmico
                 sceneScale = 1 + Math.sin(timestamp / 2500) * 0.003;
             }
             else {
@@ -212,18 +208,15 @@
                 const charWidth = ctx.measureText(char).width;
                 const charCenter = currentX + charWidth / 2;
                 
-                // Entrada escalonada por letra
                 const letterDelay = i * 35;
-                const letterElapsed = Math.max(0, (elapsed) - letterDelay);
+                const letterElapsed = Math.max(0, elapsed - letterDelay);
                 const letterProgress = Math.min(letterElapsed / 900, 1);
                 const ease = easeOutQuart(letterProgress);
 
                 ctx.save();
-                // Deslocamento vertical suave na entrada
                 const yOffset = (1 - ease) * 15;
                 ctx.translate(charCenter, yOffset);
                 ctx.globalAlpha = opacity * letterProgress;
-                
                 ctx.fillText(char, 0, 0);
                 ctx.restore();
 
@@ -233,73 +226,56 @@
             ctx.restore();
         }
 
-        async function startRecording() {
+        function startRecording() {
             if (recording) return;
             recording = true;
+            chunks = [];
             
-            const chunks = [];
-            // Captura o stream do canvas a 60fps
+            // Simplificando o stream e a captura para evitar corrupção
             const stream = canvas.captureStream(60);
             
-            // Verificação de tipos suportados para evitar ficheiros corrompidos
-            const types = [
-                'video/webm;codecs=vp9,opus',
-                'video/webm;codecs=vp8,opus',
-                'video/webm;codecs=h264,opus',
-                'video/webm',
-                'video/mp4'
-            ];
+            // Usando webm básico, que é o mais compatível para captura de canvas em navegadores
+            const options = { mimeType: 'video/webm;codecs=vp8', videoBitsPerSecond: 5000000 };
             
-            let selectedType = types.find(t => MediaRecorder.isTypeSupported(t)) || '';
-
             try {
-                const recorder = new MediaRecorder(stream, {
-                    mimeType: selectedType,
-                    videoBitsPerSecond: 8000000 // 8Mbps para estabilidade
-                });
+                recorder = new MediaRecorder(stream, options);
+            } catch (e) {
+                recorder = new MediaRecorder(stream); // Fallback total
+            }
 
-                recorder.ondataavailable = e => {
-                    if (e.data.size > 0) chunks.push(e.data);
-                };
+            recorder.ondataavailable = e => {
+                if (e.data.size > 0) chunks.push(e.data);
+            };
 
-                recorder.onstop = () => {
-                    const blob = new Blob(chunks, { type: selectedType || 'video/webm' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    // Define extensão baseada no mimeType
-                    const ext = selectedType.includes('mp4') ? 'mp4' : 'webm';
-                    a.download = `lettering-minimal-${Date.now()}.${ext}`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    
-                    setTimeout(() => URL.revokeObjectURL(url), 100);
-                    
-                    recording = false;
-                    recordBtn.disabled = false;
-                    recordProgress.style.width = "0%";
-                    document.getElementById('recordStatus').innerText = "Gravar 8s";
-                };
-
-                triggerAnimation();
-                recorder.start();
+            recorder.onstop = () => {
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `lettering-minimal-${Date.now()}.webm`;
+                a.click();
                 
-                recordBtn.disabled = true;
-                document.getElementById('recordStatus').innerText = "A gravar...";
-                recordProgress.style.transition = "width 8s linear";
-                recordProgress.style.width = "100%";
-
-                setTimeout(() => {
-                    if(recorder.state !== 'inactive') recorder.stop();
-                }, 8000);
-
-            } catch (err) {
-                console.error("Erro ao iniciar gravação:", err);
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+                
                 recording = false;
                 recordBtn.disabled = false;
-                alert("O seu navegador não suporta a gravação direta de vídeo.");
-            }
+                recordProgress.style.width = "0%";
+                document.getElementById('recordStatus').innerText = "Gravar 8s";
+            };
+
+            triggerAnimation();
+            recorder.start();
+            
+            recordBtn.disabled = true;
+            document.getElementById('recordStatus').innerText = "A gravar...";
+            recordProgress.style.transition = "width 8s linear";
+            recordProgress.style.width = "100%";
+
+            setTimeout(() => {
+                if(recorder && recorder.state === 'recording') {
+                    recorder.stop();
+                }
+            }, 8000);
         }
 
         window.onload = init;
