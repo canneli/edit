@@ -80,6 +80,7 @@
                     <option value="regra: mesma direção">regra: mesma direção</option>
                     <option value="já usa na sua loja?">já usa na sua loja?</option>
                     <option value="clique no link abaixo!">clique no link abaixo!</option>
+                    <option value="[background_only]">animação: alfabeto e números (background)</option>
                 </select>
             </div>
 
@@ -130,17 +131,18 @@
             const isLeft = side === 'left';
             return {
                 x: isLeft ? Math.random() * (canvas.width * 0.2) : canvas.width * 0.8 + Math.random() * (canvas.width * 0.2),
-                y: -50 - Math.random() * 500,
-                speed: 1 + Math.random() * 3,
+                y: -50 - Math.random() * 800,
+                speed: 1.5 + Math.random() * 4,
                 value: isLeft ? alphabet[Math.floor(Math.random() * alphabet.length)] : numbers[Math.floor(Math.random() * numbers.length)],
-                opacity: 0.05 + Math.random() * 0.15,
-                fontSize: 16 + Math.random() * 24,
+                opacity: 0.08 + Math.random() * 0.2, // Um pouco mais visível quando exclusivo
+                fontSize: 20 + Math.random() * 30,
                 side: side
             };
         }
 
         function initParticles() {
-            for (let i = 0; i < 40; i++) {
+            particles.length = 0;
+            for (let i = 0; i < 50; i++) {
                 particles.push(createParticle('left'));
                 particles.push(createParticle('right'));
             }
@@ -151,17 +153,17 @@
                 p.y += p.speed;
                 if (p.y > canvas.height + 50) {
                     const newP = createParticle(p.side);
-                    p.y = newP.y;
+                    p.y = -50;
                     p.x = newP.x;
                     p.value = newP.value;
                     p.opacity = newP.opacity;
+                    p.fontSize = newP.fontSize;
                 }
             });
         }
 
         function drawParticles() {
             ctx.save();
-            ctx.font = `600 24px ${config.fontFamily}`;
             particles.forEach(p => {
                 ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity})`;
                 ctx.font = `600 ${p.fontSize}px ${config.fontFamily}`;
@@ -196,7 +198,9 @@
 
         function render(timestamp) {
             const elapsed = timestamp - animState.startTime;
-            const text = letteringSelect.value.toLowerCase();
+            const selectValue = letteringSelect.value;
+            const isBackgroundOnly = selectValue === '[background_only]';
+            const text = isBackgroundOnly ? "" : selectValue.toLowerCase();
             
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
@@ -209,39 +213,42 @@
             updateParticles();
             drawParticles();
 
-            ctx.font = `600 ${config.fontBaseSize}px ${config.fontFamily}`;
-            let metrics = ctx.measureText(text);
-            let fontSize = config.fontBaseSize;
-            
-            if (metrics.width > config.maxWidth) {
-                const ratio = config.maxWidth / metrics.width;
-                fontSize = Math.floor(config.fontBaseSize * ratio);
-                ctx.font = `600 ${fontSize}px ${config.fontFamily}`;
-            }
+            // Se não for apenas background, desenha o letreiro
+            if (!isBackgroundOnly) {
+                ctx.font = `600 ${config.fontBaseSize}px ${config.fontFamily}`;
+                let metrics = ctx.measureText(text);
+                let fontSize = config.fontBaseSize;
+                
+                if (metrics.width > config.maxWidth) {
+                    const ratio = config.maxWidth / metrics.width;
+                    fontSize = Math.floor(config.fontBaseSize * ratio);
+                    ctx.font = `600 ${fontSize}px ${config.fontFamily}`;
+                }
 
-            const entryDuration = 1200;
-            const exitStart = 4300; 
-            const exitDuration = 600;
+                const entryDuration = 1200;
+                const exitStart = 4300; 
+                const exitDuration = 600;
 
-            let sceneScale = 1;
-            let sceneOpacity = 1;
+                let sceneScale = 1;
+                let sceneOpacity = 1;
 
-            if (elapsed < entryDuration) {
-                const p = elapsed / entryDuration;
-                sceneScale = 0.96 + (0.04 * easeOutQuart(p));
-                sceneOpacity = Math.min(p * 1.5, 1);
-            } 
-            else if (elapsed < exitStart) {
-                sceneScale = 1 + Math.sin(timestamp / 2500) * 0.003;
-            }
-            else {
-                const p = Math.min((elapsed - exitStart) / exitDuration, 1);
-                sceneScale = 1 - (0.15 * easeInQuart(p));
-                sceneOpacity = 1 - p;
-            }
+                if (elapsed < entryDuration) {
+                    const p = elapsed / entryDuration;
+                    sceneScale = 0.96 + (0.04 * easeOutQuart(p));
+                    sceneOpacity = Math.min(p * 1.5, 1);
+                } 
+                else if (elapsed < exitStart) {
+                    sceneScale = 1 + Math.sin(timestamp / 2500) * 0.003;
+                }
+                else {
+                    const p = Math.min((elapsed - exitStart) / exitDuration, 1);
+                    sceneScale = 1 - (0.15 * easeInQuart(p));
+                    sceneOpacity = 1 - p;
+                }
 
-            if (sceneOpacity > 0) {
-                drawLettering(text, canvas.width / 2, canvas.height / 2, sceneScale, sceneOpacity, elapsed, fontSize);
+                if (sceneOpacity > 0) {
+                    drawLettering(text, canvas.width / 2, canvas.height / 2, sceneScale, sceneOpacity, elapsed, fontSize);
+                }
             }
 
             requestAnimationFrame(render);
