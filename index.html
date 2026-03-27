@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AC Estética - Ad Bronze a Jato</title>
+    <title>AC Estética - Ad Premium 48s</title>
     
     <!-- Importar Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -37,6 +37,7 @@
         const VolumeX = (props) => <IconBase {...props}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></IconBase>;
         const Scissors = (props) => <IconBase {...props}><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></IconBase>;
         const Music = (props) => <IconBase {...props}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></IconBase>;
+        const Clock = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></IconBase>;
 
         // --- PALETA AC ESTÉTICA ---
         const AC_COLORS = { 
@@ -47,27 +48,30 @@
             green: '#00FF00'
         };
 
-        // --- SCRIPT DO AD: BRONZE A JATO (22 Segundos) ---
+        // --- SCRIPT DO AD (48 Segundos) ---
         const subtitleData = [
-          { id: 1, start: 0.0, end: 2.0, text: "Cansada de ficar horas no sol" },
-          { id: 2, start: 2.0, end: 4.0, text: "sem ver nenhum resultado?" },
-          { id: 3, start: 4.0, end: 6.0, text: "Conheça o Bronze a Jato" },
-          { id: 4, start: 6.0, end: 8.0, text: "exclusivo da AC Estética!" },
-          { id: 5, start: 8.0, end: 10.0, text: "A sua marquinha perfeita" },
-          { id: 6, start: 10.0, end: 12.0, text: "em apenas 30 minutos." },
-          { id: 7, start: 12.0, end: 14.0, text: "Garante um brilho natural," },
-          { id: 8, start: 14.0, end: 16.0, text: "pele super hidratada" },
-          { id: 9, start: 16.0, end: 18.5, text: "e um resultado imediato." },
-          { id: 10, start: 18.5, end: 20.5, text: "Agende já o seu horário" },
-          { id: 11, start: 20.5, end: 23.0, text: "e sinta-se poderosa!" }
+          { id: 1, start: 0.0, end: 3.5, text: "Já imaginou ter a cor do verão" },
+          { id: 2, start: 3.5, end: 7.0, text: "o ano inteiro, sem danificar a pele?" },
+          { id: 3, start: 7.0, end: 11.0, text: "Esqueça as horas intermináveis no sol." },
+          { id: 4, start: 11.0, end: 14.5, text: "Descubra o segredo das celebridades:" },
+          { id: 5, start: 14.5, end: 18.0, text: "O exclusivo Bronze a Jato da AC Estética!" },
+          { id: 6, start: 18.0, end: 22.0, text: "Uma técnica 100% natural e saudável." },
+          { id: 7, start: 22.0, end: 26.0, text: "Enriquecida com vitaminas e colágeno," },
+          { id: 8, start: 26.0, end: 30.0, text: "que hidrata intensamente enquanto bronzeia." },
+          { id: 9, start: 30.0, end: 34.0, text: "Em apenas 30 minutos na nossa clínica," },
+          { id: 10, start: 34.0, end: 38.5, text: "você conquista aquela marquinha perfeita," },
+          { id: 11, start: 38.5, end: 42.5, text: "com um brilho dourado e uniforme." },
+          { id: 12, start: 42.5, end: 45.5, text: "Resultado imediato, secagem ultra rápida." },
+          { id: 13, start: 45.5, end: 48.0, text: "Eleve sua autoestima. Agende seu horário!" }
         ];
 
-        const MAX_TIME = 23.0; // Duração total do Ad
+        const MAX_TIME = 48.0; // Novo Tempo Máximo (48s)
 
+        // Palavras destacadas em Dourado 3D
         const highlightKeywords = [
-            'horas', 'sol', 'resultado?', 'Bronze', 'Jato', 'AC', 'Estética!', 
-            'marquinha', 'perfeita', '30', 'minutos.', 'brilho', 'natural,', 
-            'hidratada', 'imediato.', 'Agende', 'horário', 'poderosa!'
+            'verão', 'pele?', 'horas', 'sol.', 'celebridades:', 'Bronze', 'Jato', 'AC', 'Estética!',
+            'natural', 'saudável.', 'vitaminas', 'colágeno,', 'hidrata', '30', 'minutos',
+            'marquinha', 'perfeita,', 'brilho', 'dourado', 'imediato,', 'ultra', 'rápida.', 'autoestima.', 'Agende'
         ];
 
         // MÚSICA E EFEITOS SONOROS (SFX)
@@ -75,13 +79,11 @@
         const SFX_URL = "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3?filename=whoosh-6316.mp3";
 
         function App() {
-          const [currentTime, setCurrentTime] = useState(0);
           const [isPlaying, setIsPlaying] = useState(false);
           const [isRecordingMode, setIsRecordingMode] = useState(false);
           const [activeSubtitle, setActiveSubtitle] = useState(null);
           const [bgMode, setBgMode] = useState('video');
           
-          // Novos Estados para Múltiplos Vídeos e Corte Automático
           const [localVideos, setLocalVideos] = useState([]);
           const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
           const [autoCutEnabled, setAutoCutEnabled] = useState(true);
@@ -89,7 +91,6 @@
           const [localLogoUrl, setLocalLogoUrl] = useState('');
           const [countdown, setCountdown] = useState(null);
           
-          // Controlos de Áudio
           const [sfxEnabled, setSfxEnabled] = useState(true);
           const [musicEnabled, setMusicEnabled] = useState(true);
           
@@ -107,21 +108,22 @@
           const previewProgressBarRef = useRef(null);
           const hudTimeRef = useRef(null);
 
-          // Sincronizar Refs de estado para o loop de animação
+          // Sincronizar Refs de estado para o loop
           useEffect(() => { currentVideoIndexRef.current = currentVideoIndex; }, [currentVideoIndex]);
           useEffect(() => { autoCutEnabledRef.current = autoCutEnabled; }, [autoCutEnabled]);
 
           const getZoomLevel = (time) => {
-            return 1.1 + (time / MAX_TIME) * 0.15; 
+            // Zoom in progressivo e suave durante os 48 segundos
+            return 1.1 + (time / MAX_TIME) * 0.18; 
           };
 
           const playAllMedia = () => {
               if (bgMode === 'video' && videoRef.current && videoRef.current.networkState !== 3) {
-                  videoRef.current.play().catch(e => console.warn("A reprodução do vídeo foi bloqueada:", e));
+                  videoRef.current.play().catch(e => console.warn("A reprodução foi bloqueada:", e));
               }
               if (musicEnabled && bgmRef.current) {
-                  bgmRef.current.volume = 0.25; // Música ambiente baixa para destacar os efeitos e a voz
-                  bgmRef.current.play().catch(e => console.warn("Música bloqueada pelo navegador:", e));
+                  bgmRef.current.volume = 0.25; 
+                  bgmRef.current.play().catch(e => console.warn("Música bloqueada:", e));
               }
           };
 
@@ -130,7 +132,6 @@
               if (bgmRef.current) bgmRef.current.pause();
           };
 
-          // Quando o vídeo atual muda na galeria, forçamos o novo a tocar a partir do início
           useEffect(() => {
              if (isPlaying) {
                  if (videoRef.current) videoRef.current.currentTime = 0;
@@ -161,7 +162,6 @@
             if (autoCutEnabled) setCurrentVideoIndex(0);
           };
 
-          // UPLOAD MÚLTIPLO DE VÍDEOS
           const handleVideoUpload = (e) => {
             const files = Array.from(e.target.files);
             if (files.length > 0) {
@@ -182,7 +182,7 @@
             }
           };
 
-          // LOOP DE PRÉ-VISUALIZAÇÃO ULTRA RÁPIDO (60 FPS)
+          // LOOP DE ANIMAÇÃO 60 FPS
           useEffect(() => {
             let lastTime = performance.now();
             let frameId;
@@ -191,7 +191,6 @@
               if (isPlaying && countdown === null) {
                 let time = timeRef.current;
                 
-                // Atualizar o tempo independentemente do vídeo principal
                 const delta = (now - lastTime) / 1000;
                 time = timeRef.current + delta;
                 
@@ -203,7 +202,7 @@
                 
                 timeRef.current = time;
 
-                // Lógica de Corte Automático (Muda o vídeo conforme avança o tempo geral)
+                // Lógica de Corte Automático distribuído pelos 48s
                 if (localVideos.length > 1 && autoCutEnabledRef.current) {
                     const timePerVideo = MAX_TIME / localVideos.length;
                     const expectedIndex = Math.min(Math.floor(time / timePerVideo), localVideos.length - 1);
@@ -225,16 +224,14 @@
 
                 const sub = subtitleData.find(s => time >= s.start && time <= s.end) || null;
                 
-                // DISPARO DE SFX E ANIMAÇÃO NA MUDANÇA DE LEGENDA
                 if (sub?.id !== activeSubRef.current?.id) {
                     activeSubRef.current = sub;
                     setActiveSubtitle(sub);
                     
-                    // Toca o efeito "Whoosh" sempre que uma nova legenda aparece
                     if (sfxEnabled && sfxRef.current && sub !== null) {
                         sfxRef.current.currentTime = 0;
-                        sfxRef.current.volume = 0.8; // Volume do Whoosh forte e impactante
-                        sfxRef.current.play().catch(e => console.log("O áudio requer interação inicial."));
+                        sfxRef.current.volume = 0.6; // Volume balanceado
+                        sfxRef.current.play().catch(e => console.log("Áudio necessita interação."));
                     }
                 }
               }
@@ -246,7 +243,6 @@
             return () => cancelAnimationFrame(frameId);
           }, [isPlaying, countdown, bgMode, sfxEnabled, musicEnabled, localVideos.length]);
 
-          // LÓGICA PARA TELA LIMPA & GRAVAÇÃO MANUAL NO OBS
           const startRecordingMode = () => {
             setIsRecordingMode(true);
             resetTime();
@@ -277,77 +273,83 @@
           return (
             <div className="flex w-full h-screen bg-[#050505] text-white font-sans overflow-hidden">
               
-              {/* Elementos de Áudio Ocultos */}
               <audio ref={bgmRef} src={MUSIC_URL} preload="auto" loop crossOrigin="anonymous"></audio>
               <audio ref={sfxRef} src={SFX_URL} preload="auto" crossOrigin="anonymous"></audio>
 
-              {/* ESTILOS ÚNICOS AD IMPACTANTE */}
+              {/* NOVAS ANIMAÇÕES E ESTILOS - MAIS BONITOS E CINEMÁTICOS */}
               <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,300;0,400;0,600&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
 
-                @keyframes letterSlam { 
-                  0% { transform: scale(0) translateY(60px) rotate(-25deg); opacity: 0; filter: blur(8px); } 
-                  50% { transform: scale(1.3) translateY(-15px) rotate(10deg); opacity: 1; filter: blur(0px); } 
-                  100% { transform: scale(1) translateY(0) rotate(-4deg); opacity: 1; filter: blur(0px); } 
-                }
-
-                @keyframes letterFloat {
-                  0% { transform: translateY(0px) rotate(-4deg); }
-                  100% { transform: translateY(-6px) rotate(0deg); }
-                }
-
-                @keyframes smoothPop {
-                  0% { transform: scale(0.8) translateY(10px); opacity: 0; }
-                  100% { transform: scale(1) translateY(0); opacity: 1; }
+                /* Animação para palavras comuns: Elegante Fade com Desfoque */
+                @keyframes elegantBlurReveal {
+                  0% { transform: scale(0.9) translateY(20px); opacity: 0; filter: blur(12px); }
+                  60% { transform: scale(1.02) translateY(-2px); opacity: 1; filter: blur(0px); }
+                  100% { transform: scale(1) translateY(0); opacity: 1; filter: blur(0px); }
                 }
 
                 .word-reveal-smooth { 
                   display: inline-block; 
-                  animation: smoothPop 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; 
                   opacity: 0; 
+                  animation: elegantBlurReveal 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; 
+                }
+
+                /* Animação para Letras Douradas: Entrada Dramática em 3D */
+                @keyframes luxuriousSlam { 
+                  0% { transform: scale(1.5) rotateX(45deg) translateY(40px); opacity: 0; filter: blur(10px); letter-spacing: 10px; } 
+                  50% { transform: scale(0.95) rotateX(-10deg) translateY(-5px); opacity: 1; filter: blur(0px); letter-spacing: 0px; } 
+                  100% { transform: scale(1) rotateX(0deg) translateY(0); opacity: 1; filter: blur(0px); letter-spacing: 1px; } 
+                }
+
+                @keyframes elegantFloat {
+                  0% { transform: translateY(0px); }
+                  100% { transform: translateY(-5px); }
+                }
+
+                @keyframes cinematicGlow {
+                  0%, 100% { filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.9)) drop-shadow(0px 0px 10px rgba(212,175,55,0.4)); }
+                  50% { filter: drop-shadow(0px 4px 8px rgba(0,0,0,1)) drop-shadow(0px 0px 25px rgba(212,175,55,0.8)); }
+                }
+
+                @keyframes goldShimmer {
+                  0% { background-position: -200% center; }
+                  100% { background-position: 200% center; }
                 }
 
                 .letter-anim {
                   display: inline-block;
                   opacity: 0;
                   animation: 
-                    letterSlam 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
-                    letterFloat 2s ease-in-out infinite alternate;
+                    luxuriousSlam 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+                    elegantFloat 2.5s ease-in-out infinite alternate,
+                    cinematicGlow 3s ease-in-out infinite alternate;
                 }
 
                 .text-ig-pill {
                   font-family: 'Jost', sans-serif;
                   font-weight: 300;
                   font-style: italic;
-                  background-color: rgba(0, 0, 0, 0.85);
-                  padding: 4px 14px;
-                  border-radius: 12px;
+                  background: linear-gradient(135deg, rgba(15,15,15,0.95) 0%, rgba(0,0,0,0.85) 100%);
+                  padding: 6px 18px;
+                  border-radius: 16px;
                   color: #FAFAFA;
                   line-height: 1.1;
-                  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-                  border: 1px solid rgba(255,255,255,0.1);
-                }
-
-                @keyframes goldShine {
-                  0% { background-position: 0% 50%; }
-                  100% { background-position: 200% 50%; }
+                  box-shadow: 0 8px 25px rgba(0,0,0,0.7), inset 0 1px 1px rgba(255,255,255,0.15);
+                  border: 1px solid rgba(255,255,255,0.08);
+                  backdrop-filter: blur(4px);
                 }
 
                 .text-3d-gold { 
                   font-family: 'Jost', sans-serif;
-                  font-weight: 300;
+                  font-weight: 400;
                   text-transform: uppercase;
-                  letter-spacing: 2px;
-                  background: linear-gradient(90deg, #FFF8DC 0%, #D4AF37 25%, #FFF8DC 50%, #CD7F32 75%, #FFF8DC 100%);
+                  background: linear-gradient(to right, #D4AF37 20%, #FFF8DC 40%, #FFF8DC 60%, #CD7F32 80%);
                   background-size: 200% auto;
                   -webkit-background-clip: text;
                   -webkit-text-fill-color: transparent;
-                  -webkit-text-stroke: 0.5px rgba(255,255,255,0.3);
-                  filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.9)) 
-                          drop-shadow(0px 0px 15px rgba(212,175,55,0.6));
+                  -webkit-text-stroke: 0.5px rgba(255,255,255,0.4);
                   transform-origin: bottom center;
-                  animation-name: letterSlam, letterFloat, goldShine;
-                  animation-duration: 0.5s, 2s, 4s;
+                  animation-name: luxuriousSlam, elegantFloat, goldShimmer;
+                  animation-duration: 0.6s, 2.5s, 5s;
                   animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1), ease-in-out, linear;
                   animation-iteration-count: 1, infinite, infinite;
                   animation-direction: normal, alternate, normal;
@@ -355,57 +357,56 @@
                 }
 
                 .color-graded-video-ac { 
-                  filter: sepia(0.35) saturate(1.4) contrast(1.15) brightness(1.05) hue-rotate(-5deg); 
+                  filter: sepia(0.2) saturate(1.3) contrast(1.1) brightness(1.05) hue-rotate(-2deg); 
                 }
 
-                @keyframes floatUp {
-                  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
-                  50% { opacity: 0.8; }
-                  100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+                /* Sistema de Partículas Aprimorado (Efeito Bokeh Dourado) */
+                @keyframes floatUpFade {
+                  0% { transform: translateY(20px) scale(0.5); opacity: 0; }
+                  20% { opacity: 0.8; transform: translateY(0px) scale(1); }
+                  80% { opacity: 0.5; }
+                  100% { transform: translateY(-120px) scale(1.5) rotate(45deg); opacity: 0; }
                 }
+
                 .gold-dust {
                   position: absolute;
-                  background: #D4AF37;
+                  background: radial-gradient(circle, #FFF8DC 0%, #D4AF37 50%, transparent 100%);
                   border-radius: 50%;
-                  filter: blur(1px);
-                  box-shadow: 0 0 10px 2px #D4AF37;
-                  animation: floatUp 3s infinite ease-in;
+                  animation: floatUpFade 4s infinite ease-in-out;
+                  mix-blend-mode: screen;
                 }
-                @keyframes sunFlare {
-                  0%, 100% { opacity: 0.3; transform: scale(1); }
-                  50% { opacity: 0.5; transform: scale(1.1); }
+
+                @keyframes pulseFlare {
+                  0%, 100% { opacity: 0.2; transform: scale(1); }
+                  50% { opacity: 0.4; transform: scale(1.2); }
                 }
                 .warm-flare { 
-                  background: radial-gradient(circle at 80% 20%, rgba(212,175,55,0.2) 0%, rgba(0,0,0,0) 60%); 
-                  animation: sunFlare 8s infinite alternate ease-in-out; 
+                  background: radial-gradient(circle at 70% 30%, rgba(212,175,55,0.25) 0%, rgba(0,0,0,0) 65%); 
+                  animation: pulseFlare 6s infinite alternate ease-in-out; 
                   pointer-events: none; 
                 }
 
-                /* Scrollbar Customizada */
-                .custom-scrollbar::-webkit-scrollbar {
-                  height: 6px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-track {
-                  background: rgba(255,255,255,0.05);
-                  border-radius: 10px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                  background: rgba(212,175,55,0.5);
-                  border-radius: 10px;
-                }
+                .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); border-radius: 10px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.4); border-radius: 10px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(212,175,55,0.8); }
               `}</style>
 
               {/* PAINEL LATERAL DE CONTROLO */}
               {!isRecordingMode && (
-                <div className="w-80 h-full border-r border-[#D4AF37]/20 bg-[#0a0a0a] p-6 flex flex-col gap-6 z-20 shadow-2xl shrink-0 overflow-y-auto custom-scrollbar">
-                  <div className="space-y-1 pb-4 border-b border-white/5">
+                <div className="w-80 h-full border-r border-[#D4AF37]/20 bg-[#0a0a0a] p-6 flex flex-col gap-6 z-20 shadow-2xl shrink-0 overflow-y-auto custom-scrollbar relative">
+                  <div className="absolute top-0 right-0 bg-[#D4AF37] text-black text-[9px] font-black px-3 py-1 rounded-bl-lg tracking-widest uppercase">
+                    Versão 48s
+                  </div>
+                  
+                  <div className="space-y-1 pb-4 border-b border-white/5 mt-2">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gradient-to-br from-[#D4AF37] to-[#CD7F32] rounded-full flex items-center justify-center font-bold text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]">
                         <Sparkles size={20} />
                       </div>
                       <div>
                         <h1 className="text-xl font-black tracking-tight" style={{fontFamily: "'Playfair Display', serif"}}>Ads Editor</h1>
-                        <p className="text-[9px] text-[#D4AF37] font-bold uppercase tracking-[0.2em]">Alta Conversão</p>
+                        <p className="text-[9px] text-[#D4AF37] font-bold uppercase tracking-[0.2em]">Alta Conversão Premium</p>
                       </div>
                     </div>
                   </div>
@@ -416,7 +417,7 @@
                       className={`w-full py-4 rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2 ${isPlaying ? 'bg-white text-black' : 'bg-gradient-to-r from-[#D4AF37] to-[#CD7F32] text-black shadow-lg shadow-[#D4AF37]/20 hover:scale-[1.02]'}`}
                     >
                       {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
-                      {isPlaying ? 'PAUSAR PREVIEW' : 'INICIAR PREVIEW AD'}
+                      {isPlaying ? 'PAUSAR PREVIEW' : 'INICIAR PREVIEW (48S)'}
                     </button>
                     <button 
                       onClick={resetTime}
@@ -440,7 +441,7 @@
                            <button 
                              onClick={() => setSfxEnabled(!sfxEnabled)} 
                              className={`p-1.5 rounded-lg border transition-colors ${sfxEnabled ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-white/10 text-neutral-500'}`}
-                             title="Efeitos Sonoros (Whoosh)"
+                             title="Efeitos Sonoros"
                            >
                              {sfxEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
                            </button>
@@ -472,10 +473,10 @@
                           {localVideos.length > 0 ? `${localVideos.length} VÍDEOS CARREGADOS ✓` : '1. CARREGAR VÍDEOS'}
                           <Video size={16} />
                         </div>
-                        {localVideos.length === 0 && <span className="text-[9px] font-normal opacity-70">Pode selecionar vários vídeos de uma vez</span>}
+                        {localVideos.length === 0 && <span className="text-[9px] font-normal opacity-70">Recomendado: 3 a 5 vídeos</span>}
                       </button>
 
-                      {/* GALERIA DE VÍDEOS & CORTE AUTOMÁTICO */}
+                      {/* GALERIA DE VÍDEOS */}
                       {localVideos.length > 0 && (
                         <div className="bg-black/30 border border-white/5 rounded-xl p-3 mt-2">
                           <div className="flex items-center justify-between mb-2">
@@ -497,7 +498,6 @@
                                 key={idx}
                                 onClick={() => { setCurrentVideoIndex(idx); setAutoCutEnabled(false); }}
                                 className={`relative shrink-0 w-16 h-20 rounded-lg overflow-hidden border-2 snap-center transition-all duration-300 ${currentVideoIndex === idx ? 'border-[#D4AF37] scale-105 shadow-[0_0_10px_rgba(212,175,55,0.5)]' : 'border-transparent opacity-50 hover:opacity-100'}`}
-                                title={`Cena ${idx + 1}`}
                               >
                                 <video src={url} className="w-full h-full object-cover pointer-events-none" muted preload="metadata" />
                                 <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black to-transparent text-[9px] font-bold text-white text-center pt-4 pb-1">
@@ -527,7 +527,7 @@
                     >
                       <div className="flex items-center gap-2">
                         <Video size={18} />
-                        PREPARAR TELA PARA OBS
+                        PREPARAR GRAVAÇÃO OBS
                       </div>
                     </button>
                   </div>
@@ -558,7 +558,9 @@
                 {!isRecordingMode && (
                   <div className="absolute top-6 right-6 flex items-center gap-4 z-50 bg-black/40 backdrop-blur-md px-4 py-2 rounded-2xl border border-[#D4AF37]/20 hidden sm:flex">
                      <div className="flex flex-col items-end">
-                       <span className="text-[9px] font-bold text-[#D4AF37] uppercase tracking-[0.2em]">Ad Time</span>
+                       <span className="text-[9px] font-bold text-[#D4AF37] uppercase tracking-[0.2em] flex items-center gap-1">
+                          <Clock size={10} /> Ad Time (48s Max)
+                       </span>
                        <span ref={hudTimeRef} className="text-xl font-mono text-white tracking-widest leading-none mt-1">0.00s</span>
                      </div>
                   </div>
@@ -599,48 +601,52 @@
                       ) : (
                          <div className="absolute inset-0 flex flex-col items-center justify-center text-[#D4AF37]/40 bg-neutral-900">
                            <ImageIcon size={48} className="mb-4 opacity-50" />
-                           <p className="text-sm font-bold uppercase tracking-widest text-center px-4">Selecione vários vídeos<br/>na barra lateral</p>
+                           <p className="text-sm font-bold uppercase tracking-widest text-center px-4">Selecione vídeos (48s)<br/>na barra lateral</p>
                          </div>
                       )}
                       
-                      {/* Efeitos Especiais de Tela para Bronze a Jato */}
+                      {/* Flare Cinematográfico */}
                       <div className="warm-flare absolute inset-0 w-full h-full"></div>
-                      <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/80 pointer-events-none"></div>
+                      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/80 pointer-events-none"></div>
                     </div>
                   )}
 
                   {/* LOGOTIPO NO TOPO */}
-                  <div className="absolute top-10 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none z-10 w-[80%] max-w-[200px]">
+                  <div className="absolute top-12 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none z-10 w-[80%] max-w-[200px]">
                      {localLogoUrl ? (
-                       <img src={localLogoUrl} alt="Logo Cliente" className="max-h-[100px] w-auto object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]" />
+                       <img src={localLogoUrl} alt="Logo" className="max-h-[100px] w-auto object-contain drop-shadow-[0_4px_15px_rgba(0,0,0,0.8)]" />
                      ) : (
                        <div className="flex flex-col items-center">
-                         <span className="text-[42px] leading-none font-black text-white tracking-widest drop-shadow-xl" style={{fontFamily: "'Playfair Display', serif"}}>AC</span>
-                         <div className="flex items-center gap-2 mt-1">
-                            <div className="w-4 h-[1px] bg-[#D4AF37]"></div>
-                            <span className="text-[12px] leading-none text-[#D4AF37] font-bold uppercase tracking-[0.3em] drop-shadow-md">Estética</span>
-                            <div className="w-4 h-[1px] bg-[#D4AF37]"></div>
+                         <span className="text-[46px] leading-none font-black text-white tracking-widest drop-shadow-2xl" style={{fontFamily: "'Playfair Display', serif"}}>AC</span>
+                         <div className="flex items-center gap-2 mt-2">
+                            <div className="w-6 h-[1px] bg-[#D4AF37]"></div>
+                            <span className="text-[11px] leading-none text-[#D4AF37] font-bold uppercase tracking-[0.4em] drop-shadow-md">Estética</span>
+                            <div className="w-6 h-[1px] bg-[#D4AF37]"></div>
                          </div>
                        </div>
                      )}
                   </div>
 
-                  {/* LEGENDAS DINÂMICAS */}
-                  <div className="absolute bottom-28 left-0 right-0 px-4 z-20 pointer-events-none flex flex-col items-center">
+                  {/* LEGENDAS DINÂMICAS E PARTÍCULAS BOKEH */}
+                  <div className="absolute bottom-32 left-0 right-0 px-5 z-20 pointer-events-none flex flex-col items-center">
                     {activeSubtitle && (
                       <div className="relative w-full flex justify-center pb-4">
                         
-                        {/* Pó Dourado */}
-                        <div className="absolute inset-0 overflow-visible pointer-events-none opacity-60">
-                           <div className="gold-dust w-1.5 h-1.5 left-[30%] top-[20%]" style={{animationDelay: '0.1s'}}></div>
-                           <div className="gold-dust w-2 h-2 left-[70%] top-[40%]" style={{animationDelay: '0.5s'}}></div>
-                           <div className="gold-dust w-1 h-1 left-[50%] top-[80%]" style={{animationDelay: '1.2s'}}></div>
+                        {/* Partículas Douradas Cinematográficas (Bokeh) */}
+                        <div className="absolute inset-0 overflow-visible pointer-events-none opacity-80">
+                           <div className="gold-dust w-2 h-2 left-[20%] top-[10%]" style={{animationDelay: '0.1s', animationDuration: '4s'}}></div>
+                           <div className="gold-dust w-3 h-3 left-[80%] top-[30%]" style={{animationDelay: '0.5s', animationDuration: '5s'}}></div>
+                           <div className="gold-dust w-1.5 h-1.5 left-[45%] top-[70%]" style={{animationDelay: '1.2s', animationDuration: '3.5s'}}></div>
+                           <div className="gold-dust w-5 h-5 left-[65%] top-[85%] opacity-40 blur-[2px]" style={{animationDelay: '2s', animationDuration: '6s'}}></div>
+                           <div className="gold-dust w-1 h-1 left-[15%] top-[55%]" style={{animationDelay: '0.8s', animationDuration: '4.5s'}}></div>
+                           <div className="gold-dust w-4 h-4 left-[85%] top-[60%] blur-[1px] opacity-60" style={{animationDelay: '1.5s', animationDuration: '5.2s'}}></div>
                         </div>
 
                         <div className="relative flex flex-wrap justify-center items-center gap-x-3 gap-y-4 max-w-[98%] text-center z-10">
                           {activeSubtitle.text.split(' ').map((word, wordIdx) => {
-                            const cleanWord = word.replace(/[.,!?]/g, '');
-                            const isKeyword = highlightKeywords.some(kw => cleanWord.toLowerCase() === kw.toLowerCase().replace(/[.,!?]/g, ''));
+                            // Limpeza mais rigorosa para pontuações para não quebrar a palavra chave
+                            const cleanWord = word.replace(/[.,!?:;]/g, '');
+                            const isKeyword = highlightKeywords.some(kw => cleanWord.toLowerCase() === kw.toLowerCase().replace(/[.,!?:;]/g, ''));
                             
                             return (
                               <span key={`${activeSubtitle.id}-word-${wordIdx}`} className="whitespace-nowrap">
@@ -648,9 +654,9 @@
                                   word.split('').map((char, charIdx) => (
                                     <span 
                                       key={`char-${charIdx}`}
-                                      className="letter-anim text-[58px] md:text-[72px] text-3d-gold font-light"
+                                      className="letter-anim text-[56px] md:text-[68px] text-3d-gold font-light"
                                       style={{ 
-                                        animationDelay: `${(wordIdx * 0.05) + (charIdx * 0.03)}s, ${(wordIdx * 0.05) + (charIdx * 0.03) + 0.5}s, 0s`,
+                                        animationDelay: `${(wordIdx * 0.08) + (charIdx * 0.04)}s, ${(wordIdx * 0.08) + (charIdx * 0.04) + 0.6}s, 0s`,
                                       }}
                                     >
                                       {char}
@@ -659,9 +665,9 @@
                                 ) : (
                                   <span 
                                     className="word-reveal-smooth"
-                                    style={{ animationDelay: `${wordIdx * 0.08}s` }}
+                                    style={{ animationDelay: `${wordIdx * 0.12}s` }}
                                   >
-                                    <span className="text-[28px] md:text-[34px] text-ig-pill inline-block font-light">
+                                    <span className="text-[26px] md:text-[32px] text-ig-pill inline-block font-light">
                                       {word}
                                     </span>
                                   </span>
@@ -674,9 +680,9 @@
                     )}
                   </div>
 
-                  {/* Barra de Progresso Dourada */}
-                  <div className="absolute bottom-0 left-0 w-full h-1.5 bg-black/40 z-30">
-                    <div ref={previewProgressBarRef} className="h-full bg-gradient-to-r from-[#CD7F32] to-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.8)]" style={{ width: '0%' }}></div>
+                  {/* Barra de Progresso Dourada Embaixo */}
+                  <div className="absolute bottom-0 left-0 w-full h-1.5 bg-black/50 z-30 overflow-hidden">
+                    <div ref={previewProgressBarRef} className="h-full bg-gradient-to-r from-[#CD7F32] via-[#FFF8DC] to-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,1)]" style={{ width: '0%', transition: 'width 0.1s linear' }}></div>
                   </div>
 
                 </div>
