@@ -276,38 +276,37 @@
               <audio ref={bgmRef} src={MUSIC_URL} preload="auto" loop crossOrigin="anonymous"></audio>
               <audio ref={sfxRef} src={SFX_URL} preload="auto" crossOrigin="anonymous"></audio>
 
-              {/* NOVAS ANIMAÇÕES E ESTILOS - MAIS BONITOS E CINEMÁTICOS */}
+              {/* NOVAS ANIMAÇÕES E ESTILOS - MAIS CHIQUE, UNIFORME E GLOWY */}
               <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,300;0,400;0,600&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Montserrat:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
 
-                /* Animação para palavras comuns: Elegante Fade com Desfoque */
+                /* Animação para palavras comuns: Elegante Fade com Desfoque suave */
                 @keyframes elegantBlurReveal {
-                  0% { transform: scale(0.9) translateY(20px); opacity: 0; filter: blur(12px); }
-                  60% { transform: scale(1.02) translateY(-2px); opacity: 1; filter: blur(0px); }
-                  100% { transform: scale(1) translateY(0); opacity: 1; filter: blur(0px); }
+                  0% { transform: translateY(15px); opacity: 0; filter: blur(8px); }
+                  100% { transform: translateY(0); opacity: 1; filter: blur(0px); }
                 }
 
                 .word-reveal-smooth { 
                   display: inline-block; 
                   opacity: 0; 
-                  animation: elegantBlurReveal 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; 
+                  animation: elegantBlurReveal 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; 
                 }
 
-                /* Animação para Letras Douradas: Entrada Dramática em 3D */
+                /* Animação para Letras Douradas: Entrada Sofisticada e Contida (Sem cortar) */
                 @keyframes luxuriousSlam { 
-                  0% { transform: scale(1.5) rotateX(45deg) translateY(40px); opacity: 0; filter: blur(10px); letter-spacing: 10px; } 
-                  50% { transform: scale(0.95) rotateX(-10deg) translateY(-5px); opacity: 1; filter: blur(0px); letter-spacing: 0px; } 
-                  100% { transform: scale(1) rotateX(0deg) translateY(0); opacity: 1; filter: blur(0px); letter-spacing: 1px; } 
+                  0% { transform: scale(1.1) translateY(10px); opacity: 0; filter: blur(10px); letter-spacing: 4px; } 
+                  100% { transform: scale(1) translateY(0); opacity: 1; filter: blur(0px); letter-spacing: 1px; } 
                 }
 
                 @keyframes elegantFloat {
                   0% { transform: translateY(0px); }
-                  100% { transform: translateY(-5px); }
+                  100% { transform: translateY(-3px); }
                 }
 
+                /* Glow Dourado Muito Mais Chic e Suave */
                 @keyframes cinematicGlow {
-                  0%, 100% { filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.9)) drop-shadow(0px 0px 10px rgba(212,175,55,0.4)); }
-                  50% { filter: drop-shadow(0px 4px 8px rgba(0,0,0,1)) drop-shadow(0px 0px 25px rgba(212,175,55,0.8)); }
+                  0%, 100% { filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.8)) drop-shadow(0px 0px 10px rgba(212,175,55,0.4)); }
+                  50% { filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.9)) drop-shadow(0px 0px 25px rgba(212,175,55,0.85)); }
                 }
 
                 @keyframes goldShimmer {
@@ -319,45 +318,46 @@
                   display: inline-block;
                   opacity: 0;
                   animation: 
-                    luxuriousSlam 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
-                    elegantFloat 2.5s ease-in-out infinite alternate,
-                    cinematicGlow 3s ease-in-out infinite alternate;
+                    luxuriousSlam 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards,
+                    elegantFloat 3s ease-in-out infinite alternate,
+                    cinematicGlow 4s ease-in-out infinite alternate;
                 }
 
+                /* Pílula para texto normal: Fonte Montserrat super uniforme e limpa */
                 .text-ig-pill {
-                  font-family: 'Jost', sans-serif;
-                  font-weight: 300;
-                  font-style: italic;
-                  background: linear-gradient(135deg, rgba(15,15,15,0.95) 0%, rgba(0,0,0,0.85) 100%);
-                  padding: 6px 18px;
-                  border-radius: 16px;
+                  font-family: 'Montserrat', sans-serif;
+                  font-weight: 400;
+                  background: linear-gradient(135deg, rgba(15,15,15,0.85) 0%, rgba(0,0,0,0.7) 100%);
+                  padding: 4px 16px;
+                  border-radius: 20px;
                   color: #FAFAFA;
-                  line-height: 1.1;
-                  box-shadow: 0 8px 25px rgba(0,0,0,0.7), inset 0 1px 1px rgba(255,255,255,0.15);
-                  border: 1px solid rgba(255,255,255,0.08);
-                  backdrop-filter: blur(4px);
+                  line-height: 1.2;
+                  box-shadow: 0 4px 15px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.1);
+                  border: 1px solid rgba(255,255,255,0.06);
+                  backdrop-filter: blur(6px);
                 }
 
+                /* Texto Dourado 3D: Fonte Cinzel refinada */
                 .text-3d-gold { 
-                  font-family: 'Jost', sans-serif;
-                  font-weight: 400;
+                  font-family: 'Cinzel', serif;
+                  font-weight: 600;
                   text-transform: uppercase;
-                  background: linear-gradient(to right, #D4AF37 20%, #FFF8DC 40%, #FFF8DC 60%, #CD7F32 80%);
+                  background: linear-gradient(to right, #D4AF37 0%, #FFF8DC 50%, #D4AF37 100%);
                   background-size: 200% auto;
                   -webkit-background-clip: text;
                   -webkit-text-fill-color: transparent;
-                  -webkit-text-stroke: 0.5px rgba(255,255,255,0.4);
+                  -webkit-text-stroke: 0.3px rgba(255,255,255,0.2);
                   transform-origin: bottom center;
                   animation-name: luxuriousSlam, elegantFloat, goldShimmer;
-                  animation-duration: 0.6s, 2.5s, 5s;
-                  animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1), ease-in-out, linear;
+                  animation-duration: 0.8s, 3s, 5s;
+                  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1), ease-in-out, linear;
                   animation-iteration-count: 1, infinite, infinite;
                   animation-direction: normal, alternate, normal;
                   animation-fill-mode: forwards, forwards, forwards;
                 }
 
                 .color-graded-video-ac { 
-                  filter: sepia(0.2) saturate(1.3) contrast(1.1) brightness(1.05) hue-rotate(-2deg); 
+                  filter: sepia(0.15) saturate(1.25) contrast(1.1) brightness(1.05) hue-rotate(-1deg); 
                 }
 
                 /* Sistema de Partículas Aprimorado (Efeito Bokeh Dourado) */
@@ -377,8 +377,8 @@
                 }
 
                 @keyframes pulseFlare {
-                  0%, 100% { opacity: 0.2; transform: scale(1); }
-                  50% { opacity: 0.4; transform: scale(1.2); }
+                  0%, 100% { opacity: 0.15; transform: scale(1); }
+                  50% { opacity: 0.35; transform: scale(1.1); }
                 }
                 .warm-flare { 
                   background: radial-gradient(circle at 70% 30%, rgba(212,175,55,0.25) 0%, rgba(0,0,0,0) 65%); 
@@ -642,9 +642,10 @@
                            <div className="gold-dust w-4 h-4 left-[85%] top-[60%] blur-[1px] opacity-60" style={{animationDelay: '1.5s', animationDuration: '5.2s'}}></div>
                         </div>
 
-                        <div className="relative flex flex-wrap justify-center items-center gap-x-3 gap-y-4 max-w-[98%] text-center z-10">
+                        {/* Text Container com Gap Menor e Layout Estável */}
+                        <div className="relative flex flex-wrap justify-center items-center gap-x-2 gap-y-3 max-w-[95%] text-center z-10">
                           {activeSubtitle.text.split(' ').map((word, wordIdx) => {
-                            // Limpeza mais rigorosa para pontuações para não quebrar a palavra chave
+                            // Limpeza rigorosa
                             const cleanWord = word.replace(/[.,!?:;]/g, '');
                             const isKeyword = highlightKeywords.some(kw => cleanWord.toLowerCase() === kw.toLowerCase().replace(/[.,!?:;]/g, ''));
                             
@@ -654,9 +655,9 @@
                                   word.split('').map((char, charIdx) => (
                                     <span 
                                       key={`char-${charIdx}`}
-                                      className="letter-anim text-[56px] md:text-[68px] text-3d-gold font-light"
+                                      className="letter-anim text-[36px] md:text-[44px] text-3d-gold"
                                       style={{ 
-                                        animationDelay: `${(wordIdx * 0.08) + (charIdx * 0.04)}s, ${(wordIdx * 0.08) + (charIdx * 0.04) + 0.6}s, 0s`,
+                                        animationDelay: `${(wordIdx * 0.06) + (charIdx * 0.03)}s, ${(wordIdx * 0.06) + (charIdx * 0.03) + 0.5}s, 0s`,
                                       }}
                                     >
                                       {char}
@@ -665,9 +666,9 @@
                                 ) : (
                                   <span 
                                     className="word-reveal-smooth"
-                                    style={{ animationDelay: `${wordIdx * 0.12}s` }}
+                                    style={{ animationDelay: `${wordIdx * 0.1}s` }}
                                   >
-                                    <span className="text-[26px] md:text-[32px] text-ig-pill inline-block font-light">
+                                    <span className="text-[17px] md:text-[20px] text-ig-pill inline-block">
                                       {word}
                                     </span>
                                   </span>
